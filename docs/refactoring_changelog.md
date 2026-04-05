@@ -169,3 +169,37 @@ Full naming set:
 - `positions_silver.yaml` — Silver tier
 - `positions_gold_naive.yaml` — Naive Gold tier
 - `positions_gold.yaml` — Semantic Gold tier
+
+---
+
+## Step 5: Unified Orchestrator (2026-04-05)
+
+### Created
+
+| Path | Purpose |
+|------|---------|
+| `run_pipeline.py` | End-to-end pipeline orchestrator — single entry point for all 7 phases |
+
+### Design
+
+Replaces the manual command sequence in `docs/runbook.md` with a single script.
+All phase scripts invoked via `subprocess` + `sys.executable` (venv-safe, loosely coupled).
+
+```
+python run_pipeline.py [--phases N ...] [--source local|s3] [--dry-run] [--launch-app]
+```
+
+Default phases: `1 3 4 5 6` (Phase 2 requires AWS credentials; Phase 7 prints Streamlit
+launch instructions rather than blocking).
+
+| Flag | Purpose |
+|------|---------|
+| `--phases 1 3 4 5 6` | Which phases to run (default: 1 3 4 5 6) |
+| `--source local\|s3` | Phase 3 Bronze source (default: local) |
+| `--dry-run` | Phase 6: ground truth only, skip Cortex API |
+| `--launch-app` | Phase 7: launch Streamlit (blocking) |
+
+Pre-flight checks: Phase 2 aborts if no AWS credentials found; Phase 3 (local) aborts if
+seed CSVs are missing and suggests running Phase 1 first. Phase 4 runs `dbt seed`,
+`dbt run`, `dbt test` sequentially with `cwd=dbt/`. Phases run in ascending order
+regardless of CLI order.

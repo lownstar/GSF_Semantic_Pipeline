@@ -62,12 +62,9 @@ portfolio-grade pipeline demo. See [docs/refactoring_changelog.md](docs/refactor
 | 1 | V1 cleanup + pipeline rename (Naive / Semantic Enriched) | Complete |
 | 2 | Extract infrastructure SQL + refactor docs | Complete |
 | 3 | S3 delivery layer (boto3, external stage) | Complete |
-| 4 | dbt integration (Silver + Gold models, DAG) | Planned |
-| 5 | Naive Gold layer (GOLD_NAIVE schema) | Planned |
-| 6 | Separate semantic model staging | Planned |
-| 7 | Unified orchestrator (run_pipeline.py) | Planned |
-| 8 | Enhanced multi-page Streamlit app | Planned |
-| 9 | Documentation polish | Planned |
+| 4 | dbt integration — four-tier comparison (Bronze/Silver/Naive Gold/Semantic Gold) | Complete |
+| 5 | Unified orchestrator (run_pipeline.py) | Complete |
+| 6 | Documentation polish | Next |
 
 **Epics completed (PoC phase):** 1 (data generator), 2 (Naive Pipeline), 3 (Semantic
 Pipeline), 4 (Cortex Analyst), 5 (variance + Streamlit).

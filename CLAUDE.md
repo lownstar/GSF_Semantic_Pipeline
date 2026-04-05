@@ -50,8 +50,8 @@ Cortex still gets it wrong — and what the semantic model adds."*
 | 2 | Extract infrastructure SQL + refactor docs | Done |
 | 3 | S3 delivery layer | Done |
 | 4 | dbt integration — four-tier comparison (Bronze/Silver/Naive Gold/Semantic Gold) | Done |
-| 5 | Unified orchestrator (run_pipeline.py) | Next |
-| 6 | Documentation polish | Planned |
+| 5 | Unified orchestrator (run_pipeline.py) | Done |
+| 6 | Documentation polish | Next |
 
 ---
 
