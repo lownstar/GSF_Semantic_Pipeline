@@ -1,0 +1,201 @@
+security_id,security_name,cusip,isin,ticker,asset_class,security_type,currency
+SEC-0001,Figueroa PLC AG,CXULJYLJE,USCXULJYLJE1,FPA,Real Estate,REIT,USD
+SEC-0002,"Patterson, Smith and Jones plc",L1CQ99CHJ,USL1CQ99CHJ4,SAJP,Commodities,Futures Fund,USD
+SEC-0003,"Mckee, Gardner and Davenport Corp",NF4ZW9XA3,USNF4ZW9XA32,GADC,Alternatives,Hedge Fund,USD
+SEC-0004,"Tran, Jordan and Williams Inc",7EEDTJVZH,US7EEDTJVZH7,JAWI,Alternatives,Real Assets,USD
+SEC-0005,Nolan-Flynn AG,R64DPJA1W,USR64DPJA1W5,A,Commodities,Futures Fund,USD
+SEC-0006,Nolan and Sons SA,PZUE8YFBN,USPZUE8YFBN3,NASS,Alternatives,Hedge Fund,USD
+SEC-0007,"Wright, Garcia and Deleon plc",EL6246HID,USEL6246HID9,GADP,Real Estate,REIT,USD
+SEC-0008,Dickson-Brady AG,07IF2GOG7,US07IF2GOG73,A1,Real Estate,Real Estate Fund,USD
+SEC-0009,Hancock and Sons Ltd,FZNBQH7M3,USFZNBQH7M37,HASL,Cash,Money Market,USD
+SEC-0010,Johnson-Doyle Inc,XOKC1MSY4,USXOKC1MSY46,I,Fixed Income,Corporate Bond,USD
+SEC-0011,Patton-Jenkins Inc,5JU9BVM2P,US5JU9BVM2P2,I1,Alternatives,Hedge Fund,USD
+SEC-0012,"Shields, Cochran and Adams plc",6GBPS3Y70,US6GBPS3Y708,CAAP,Real Estate,REIT,USD
+SEC-0013,"Rodriguez, Brennan and Garrison plc",CXLL4ZKLO,USCXLL4ZKLO9,BAGP,Fixed Income,Municipal Bond,USD
+SEC-0014,Gonzalez Group AG,EP7Y6WKTA,USEP7Y6WKTA5,GGA,Cash,Cash Equivalent,USD
+SEC-0015,Torres-Pope plc,2VLPYS280,US2VLPYS2809,P,Alternatives,Hedge Fund,USD
+SEC-0016,Walker Ltd Ltd,SWM31YIHA,USSWM31YIHA3,WLL,Commodities,Commodity ETF,USD
+SEC-0017,Ross LLC AG,4COWGZRIX,US4COWGZRIX9,RLA,Fixed Income,ETF,USD
+SEC-0018,Rasmussen LLC plc,H2ZQU7EEQ,USH2ZQU7EEQ9,RLP,Equity,Common Stock,USD
+SEC-0019,May-Ross plc,WZS3T60RJ,USWZS3T60RJ7,P1,Real Estate,Real Estate Fund,USD
+SEC-0020,"Rivera, Johnson and Wiley AG",RIPZIM6CF,USRIPZIM6CF6,JAWA,Fixed Income,Municipal Bond,USD
+SEC-0021,White-Estes SA,HOLQC3O18,USHOLQC3O184,S,Cash,Money Market,USD
+SEC-0022,Johnson-Carlson plc,R7KO64T02,USR7KO64T027,P2,Equity,ETF,USD
+SEC-0023,Chandler-Edwards Corp,JRNY20479,USJRNY204793,C,Fixed Income,ETF,USD
+SEC-0024,"Joyce, Wilson and Lam plc",VXDP5GJLQ,USVXDP5GJLQ7,WALP,Real Estate,REIT,USD
+SEC-0025,Scott Ltd Ltd,13JCAT9MX,US13JCAT9MX6,SLL,Alternatives,Private Equity,USD
+SEC-0026,Smith-Frost Inc,8HAFEYUHZ,US8HAFEYUHZ8,I2,Commodities,Commodity ETF,USD
+SEC-0027,"Mcdaniel, Bentley and Mclaughlin AG",V0E38DALY,USV0E38DALY2,BAMA,Alternatives,Hedge Fund,USD
+SEC-0028,Diaz Inc SA,HV3IZKY22,USHV3IZKY220,DIS,Cash,Cash Equivalent,USD
+SEC-0029,"Mccall, Hanson and Alvarado Ltd",TXCXAPRPN,USTXCXAPRPN5,HAAL,Real Estate,REIT,USD
+SEC-0030,Cortez LLC plc,GSXW71Q3V,USGSXW71Q3V5,CLP,Cash,Money Market,USD
+SEC-0031,"Parker, Ortiz and Powell Inc",KQ1UYMRLR,USKQ1UYMRLR6,OAPI,Alternatives,Hedge Fund,USD
+SEC-0032,Spencer-Lee Ltd,KV5USGIOT,USKV5USGIOT9,L,Alternatives,Private Equity,USD
+SEC-0033,"Bentley, Byrd and Orr SA",ZQAKOIXNT,USZQAKOIXNT6,BAOS,Fixed Income,ETF,USD
+SEC-0034,"Carroll, Sullivan and Bass SA",TMQLIZL08,USTMQLIZL088,SABS,Alternatives,Private Equity,USD
+SEC-0035,Mitchell-Jordan Corp,HR09SKDGI,USHR09SKDGI6,C1,Commodities,Commodity ETF,USD
+SEC-0036,"Lawson, Morris and Ramos Inc",ZEBBK7W1D,USZEBBK7W1D2,MARI,Fixed Income,Municipal Bond,USD
+SEC-0037,"Lewis, Kennedy and Santana Ltd",QPGB7R3OC,USQPGB7R3OC9,KASL,Equity,ETF,USD
+SEC-0038,"Jackson, Miller and Robertson Corp",FUK9E1V2I,USFUK9E1V2I8,MARC,Commodities,Commodity ETF,USD
+SEC-0039,"Harvey, Davis and Crane plc",6KVPUC8D1,US6KVPUC8D14,DACP,Real Estate,Real Estate Fund,USD
+SEC-0040,Chambers and Sons Ltd,XFGCAQVKI,USXFGCAQVKI9,CASL,Commodities,Commodity ETF,USD
+SEC-0041,Hernandez Inc SA,4CIJ2V2HE,US4CIJ2V2HE7,HIS,Commodities,Futures Fund,USD
+SEC-0042,Riggs PLC Ltd,3CFL0UKEY,US3CFL0UKEY7,RPL,Fixed Income,Corporate Bond,USD
+SEC-0043,Gibson Ltd Ltd,SRCBPLJD8,USSRCBPLJD82,GLL,Commodities,Futures Fund,USD
+SEC-0044,"Lee, Horton and Snyder SA",3U1GSPK9P,US3U1GSPK9P5,HASS,Real Estate,REIT,USD
+SEC-0045,Hernandez Ltd plc,MLY4LYK83,USMLY4LYK835,HLP,Cash,Money Market,USD
+SEC-0046,Stafford Inc plc,DJE153A5Q,USDJE153A5Q4,SIP,Real Estate,REIT,USD
+SEC-0047,Robinson-Brock AG,N1W1HT7PZ,USN1W1HT7PZ8,A2,Equity,Common Stock,USD
+SEC-0048,"Holmes, Williams and Wright SA",VIFTTD96Q,USVIFTTD96Q4,WAWS,Equity,Common Stock,USD
+SEC-0049,Bryant Group Corp,RZSJ49ITN,USRZSJ49ITN0,BGC,Equity,ETF,USD
+SEC-0050,"Schmidt, Hansen and Stewart Inc",J2O7S3KKV,USJ2O7S3KKV2,HASI,Real Estate,REIT,USD
+SEC-0051,Salazar-Ball Corp,QRL1N759I,USQRL1N759I5,C2,Commodities,Futures Fund,USD
+SEC-0052,"Simmons, Meadows and Griffin plc",B0Z3NX39R,USB0Z3NX39R2,MAGP,Cash,Money Market,USD
+SEC-0053,Manning Group AG,8LD4D6AF5,US8LD4D6AF53,MGA,Equity,Common Stock,USD
+SEC-0054,Green-Wright plc,2JWOCLYT8,US2JWOCLYT89,P3,Fixed Income,Government Bond,USD
+SEC-0055,"Ramirez, Strickland and Washington AG",BCW790PDW,USBCW790PDW9,SAWA,Commodities,Futures Fund,USD
+SEC-0056,Hill Inc Corp,Y6B2KNFTU,USY6B2KNFTU8,HIC,Equity,Preferred Stock,USD
+SEC-0057,"Mitchell, Nelson and Flores Corp",C5WI6FQJJ,USC5WI6FQJJ0,NAFC,Fixed Income,Corporate Bond,USD
+SEC-0058,"Miller, Hernandez and Reyes Ltd",YFPMVXPJ4,USYFPMVXPJ46,HARL,Equity,Preferred Stock,USD
+SEC-0059,Mccarthy Inc plc,DNMKZA3OA,USDNMKZA3OA8,MIP,Fixed Income,ETF,USD
+SEC-0060,Russell-Daniels AG,0361I2HGJ,US0361I2HGJ0,A3,Commodities,Commodity ETF,USD
+SEC-0061,Brown-Wall SA,DWB2BNE6L,USDWB2BNE6L1,S1,Commodities,Commodity ETF,USD
+SEC-0062,Stein-Silva Corp,ET8T63J3R,USET8T63J3R6,C3,Cash,Money Market,USD
+SEC-0063,"Smith, Gilmore and Johnston Ltd",2QC1IYYO4,US2QC1IYYO43,GAJL,Alternatives,Real Assets,USD
+SEC-0064,Smith-Bell Inc,2ATQYYV37,US2ATQYYV374,I3,Real Estate,Real Estate Fund,USD
+SEC-0065,Castaneda-Ashley Corp,QW7LVXWQZ,USQW7LVXWQZ1,C4,Equity,ETF,USD
+SEC-0066,Medina-Navarro Inc,F8KRD5EQY,USF8KRD5EQY0,I4,Commodities,Futures Fund,USD
+SEC-0067,"Hurst, Freeman and Nelson AG",0FODRO8BN,US0FODRO8BN3,FANA,Commodities,Futures Fund,USD
+SEC-0068,Johnson-Rogers Corp,4DYT9MOGE,US4DYT9MOGE3,C5,Cash,Cash Equivalent,USD
+SEC-0069,"Yates, Ramsey and Pittman SA",HX8BM92H3,USHX8BM92H30,RAPS,Cash,Money Market,USD
+SEC-0070,Hooper PLC AG,H5LF6A4FE,USH5LF6A4FE5,HPA,Real Estate,REIT,USD
+SEC-0071,Meadows PLC Inc,XAA2ILGB0,USXAA2ILGB09,MPI,Alternatives,Hedge Fund,USD
+SEC-0072,"Alvarado, Miller and Patterson SA",CQNVQHW06,USCQNVQHW061,MAPS,Real Estate,REIT,USD
+SEC-0073,White-Green plc,XB94PDZP6,USXB94PDZP69,P4,Commodities,Futures Fund,USD
+SEC-0074,Lewis-Murphy Corp,CJWTL9TQV,USCJWTL9TQV6,C6,Alternatives,Real Assets,USD
+SEC-0075,Ramirez-Bean Inc,4X1ZHQIMQ,US4X1ZHQIMQ0,I5,Equity,ETF,USD
+SEC-0076,King-Miller Ltd,PXNF7C3DD,USPXNF7C3DD2,L1,Cash,Money Market,USD
+SEC-0077,Curry Inc Corp,UVULEMX15,USUVULEMX155,CIC,Commodities,Futures Fund,USD
+SEC-0078,Walker-Jones Ltd,VMUHXID4N,USVMUHXID4N9,L2,Commodities,Commodity ETF,USD
+SEC-0079,"Williams, Johnson and Wright Corp",3493WXA73,US3493WXA732,JAWC,Alternatives,Real Assets,USD
+SEC-0080,Howell and Sons Corp,J17MGFXC0,USJ17MGFXC03,HASC,Alternatives,Hedge Fund,USD
+SEC-0081,Wells Inc SA,TNQFLL7V5,USTNQFLL7V56,WIS,Equity,Common Stock,USD
+SEC-0082,"Gould, Marshall and Scott AG",BCPPVOHSM,USBCPPVOHSM3,MASA,Fixed Income,Corporate Bond,USD
+SEC-0083,Jackson-Lawson SA,YRYBOVAKH,USYRYBOVAKH6,S2,Equity,Preferred Stock,USD
+SEC-0084,"Higgins, Strickland and Martin Ltd",LA0GNZS43,USLA0GNZS438,SAML,Fixed Income,Municipal Bond,USD
+SEC-0085,Rodriguez-Johnson SA,BA75UUZPE,USBA75UUZPE5,S3,Equity,Preferred Stock,USD
+SEC-0086,Johnston-Odonnell Corp,2W37D4IVS,US2W37D4IVS6,C7,Equity,Preferred Stock,USD
+SEC-0087,Sanders-Espinoza SA,MLGSES6M0,USMLGSES6M05,S4,Cash,Cash Equivalent,USD
+SEC-0088,Vargas Ltd Corp,DJGF1C8WQ,USDJGF1C8WQ0,VLC,Commodities,Commodity ETF,USD
+SEC-0089,Garcia LLC SA,7UWW5WFCP,US7UWW5WFCP8,GLS,Real Estate,Real Estate Fund,USD
+SEC-0090,"Burke, Martinez and Riggs AG",CSLQC3C54,USCSLQC3C541,MARA,Alternatives,Private Equity,USD
+SEC-0091,Reed Group plc,U80B6UGVS,USU80B6UGVS8,RGP,Real Estate,Real Estate Fund,USD
+SEC-0092,"Wood, Hunter and Peterson Inc",349DXBZ9S,US349DXBZ9S3,HAPI,Equity,Preferred Stock,USD
+SEC-0093,Short-Garcia Ltd,NKOMV2XCD,USNKOMV2XCD8,L3,Real Estate,REIT,USD
+SEC-0094,Reid-Poole Ltd,J48VFCX7L,USJ48VFCX7L8,L4,Commodities,Futures Fund,USD
+SEC-0095,"Hernandez, Thompson and Boyd Corp",V7LN23Y30,USV7LN23Y302,TABC,Commodities,Futures Fund,USD
+SEC-0096,"Nelson, Morton and Medina SA",YSAL8M1G9,USYSAL8M1G97,MAMS,Commodities,Commodity ETF,USD
+SEC-0097,Marshall-Petersen Ltd,4D145BM1E,US4D145BM1E3,L5,Fixed Income,Government Bond,USD
+SEC-0098,"Adams, Christian and Rivas Corp",GYW6ZBNZ8,USGYW6ZBNZ88,CARC,Cash,Money Market,USD
+SEC-0099,Ramirez Group SA,2II826GYU,US2II826GYU2,RGS,Real Estate,Real Estate Fund,USD
+SEC-0100,Christensen PLC Ltd,2SPFHV5BR,US2SPFHV5BR9,CPL,Cash,Cash Equivalent,USD
+SEC-0101,"Barnett, Rogers and Snyder Inc",ZSEDFQS3D,USZSEDFQS3D3,RASI,Alternatives,Real Assets,USD
+SEC-0102,White-Lewis Ltd,7OONNCILD,US7OONNCILD3,L6,Fixed Income,ETF,USD
+SEC-0103,Peterson-Beard Corp,EK3ZEZQAC,USEK3ZEZQAC7,C8,Commodities,Futures Fund,USD
+SEC-0104,"Beard, Peters and Black Corp",T0SEKKBP2,UST0SEKKBP27,PABC,Alternatives,Hedge Fund,USD
+SEC-0105,Miller Ltd Inc,4RTWUZKAM,US4RTWUZKAM7,MLI,Cash,Money Market,USD
+SEC-0106,Freeman-Chang Corp,XD9CSS9TO,USXD9CSS9TO3,C9,Real Estate,Real Estate Fund,USD
+SEC-0107,"Alvarez, Joseph and West SA",NN0MCIXDU,USNN0MCIXDU2,JAWS,Cash,Money Market,USD
+SEC-0108,Davis and Sons Inc,MMX3Y9RGE,USMMX3Y9RGE8,DASI,Alternatives,Hedge Fund,USD
+SEC-0109,Holt-Torres Inc,KBHB7S9TJ,USKBHB7S9TJ9,I6,Commodities,Futures Fund,USD
+SEC-0110,"Wood, Tran and Cooper Ltd",M25LEN606,USM25LEN6067,TACL,Commodities,Commodity ETF,USD
+SEC-0111,"Pierce, Bell and Chavez Corp",RR7S20CV3,USRR7S20CV35,BACC,Cash,Cash Equivalent,USD
+SEC-0112,King-Martinez Ltd,DLKQZFPQ0,USDLKQZFPQ09,L7,Real Estate,Real Estate Fund,USD
+SEC-0113,Stewart Ltd plc,J98CWN2Y8,USJ98CWN2Y85,SLP,Alternatives,Real Assets,USD
+SEC-0114,"Tapia, Vaughn and Lee Inc",EIXN8BFQN,USEIXN8BFQN9,VALI,Fixed Income,ETF,USD
+SEC-0115,"Washington, Hardy and Bray AG",ENLK8AGS6,USENLK8AGS64,HABA,Cash,Money Market,USD
+SEC-0116,"Carlson, Hooper and Wall Ltd",ZHWY9HECG,USZHWY9HECG4,HAWL,Equity,Preferred Stock,USD
+SEC-0117,Perez-White Inc,389YZTKKF,US389YZTKKF1,I7,Commodities,Futures Fund,USD
+SEC-0118,Erickson and Sons Ltd,SEHE2ATN2,USSEHE2ATN27,EASL,Commodities,Commodity ETF,USD
+SEC-0119,Williams-Brown AG,5COZROOUE,US5COZROOUE3,A4,Real Estate,REIT,USD
+SEC-0120,Terry-Martinez Inc,QYM52XG8P,USQYM52XG8P9,I8,Alternatives,Real Assets,USD
+SEC-0121,Garcia-Smith AG,FFLZM764J,USFFLZM764J2,A5,Equity,Common Stock,USD
+SEC-0122,Harrison-Alexander Corp,WWDXVUGW6,USWWDXVUGW63,C10,Commodities,Futures Fund,USD
+SEC-0123,Sheppard LLC Inc,3BBXUX1OX,US3BBXUX1OX7,SLI,Alternatives,Real Assets,USD
+SEC-0124,Wilson-Jones SA,8R2YKCCPR,US8R2YKCCPR5,S5,Cash,Cash Equivalent,USD
+SEC-0125,Jones-Soto AG,F5L9MO1SD,USF5L9MO1SD6,A6,Fixed Income,Municipal Bond,USD
+SEC-0126,Hernandez PLC Inc,JIDKNWI5F,USJIDKNWI5F1,HPI,Fixed Income,ETF,USD
+SEC-0127,Miller-Wright SA,L1RSRLA8S,USL1RSRLA8S9,S6,Alternatives,Real Assets,USD
+SEC-0128,"Duran, Obrien and Gibbs AG",MBR5XQT4P,USMBR5XQT4P0,OAGA,Fixed Income,Corporate Bond,USD
+SEC-0129,Rowe Group Ltd,1NOUHTCS1,US1NOUHTCS13,RGL,Alternatives,Real Assets,USD
+SEC-0130,Kerr-Evans SA,VEDN9UNFV,USVEDN9UNFV7,S7,Alternatives,Real Assets,USD
+SEC-0131,"Branch, Torres and Oliver Inc",BZ2SF6F7L,USBZ2SF6F7L8,TAOI,Cash,Money Market,USD
+SEC-0132,"Choi, Garcia and Farmer AG",M3TZK3NY9,USM3TZK3NY96,GAFA,Cash,Cash Equivalent,USD
+SEC-0133,"Clark, Guerrero and Moore SA",5WVJX8UIB,US5WVJX8UIB5,GAMS,Real Estate,Real Estate Fund,USD
+SEC-0134,Arnold and Sons AG,WW4FYB8DA,USWW4FYB8DA7,AASA,Cash,Money Market,USD
+SEC-0135,Ortiz Ltd Corp,OHSWQ40ZS,USOHSWQ40ZS2,OLC,Alternatives,Private Equity,USD
+SEC-0136,"Harrison, Johnson and Roberts SA",RN8QTTY5Y,USRN8QTTY5Y3,JARS,Real Estate,Real Estate Fund,USD
+SEC-0137,Warner-Gibson AG,R8KK791ZY,USR8KK791ZY9,A7,Commodities,Futures Fund,USD
+SEC-0138,"Hall, Baker and Moody plc",M72JEYN93,USM72JEYN931,BAMP,Cash,Cash Equivalent,USD
+SEC-0139,"Guerrero, Peck and Coleman Inc",KZMPJRHT7,USKZMPJRHT79,PACI,Fixed Income,Municipal Bond,USD
+SEC-0140,"Walker, Hernandez and Baker Corp",D0IB6IIDL,USD0IB6IIDL6,HABC,Commodities,Futures Fund,USD
+SEC-0141,Jones and Sons SA,1AT7O75RH,US1AT7O75RH5,JASS,Cash,Money Market,USD
+SEC-0142,Larson-Holloway Ltd,X6DUT076G,USX6DUT076G8,L8,Alternatives,Private Equity,USD
+SEC-0143,Gonzales-Harrison plc,2G05KBKV7,US2G05KBKV70,P5,Fixed Income,Government Bond,USD
+SEC-0144,Lyons-Bender plc,9TR74QGEF,US9TR74QGEF5,P6,Alternatives,Private Equity,USD
+SEC-0145,"Fernandez, Kim and George SA",G02U1G463,USG02U1G4636,KAGS,Cash,Cash Equivalent,USD
+SEC-0146,Navarro-Munoz Inc,OD9R7ANQJ,USOD9R7ANQJ6,I9,Real Estate,Real Estate Fund,USD
+SEC-0147,Davis Ltd AG,0AXYCELOS,US0AXYCELOS4,DLA,Alternatives,Private Equity,USD
+SEC-0148,"Matthews, Smith and Hubbard SA",E6KWHEF0V,USE6KWHEF0V7,SAHS,Commodities,Futures Fund,USD
+SEC-0149,Johnston-Hines AG,231YV2STN,US231YV2STN1,A8,Cash,Cash Equivalent,USD
+SEC-0150,Ruiz Ltd Inc,36HTF4PYZ,US36HTF4PYZ6,RLI,Real Estate,REIT,USD
+SEC-0151,Moon-White AG,QCEOUUYLA,USQCEOUUYLA9,A9,Cash,Money Market,USD
+SEC-0152,"Graham, Olsen and Costa SA",HCPZTC69Q,USHCPZTC69Q9,OACS,Alternatives,Hedge Fund,USD
+SEC-0153,Bailey-Cook Corp,119XP9N56,US119XP9N560,C11,Alternatives,Private Equity,USD
+SEC-0154,"Garcia, Martin and Jenkins SA",85E4E9OE9,US85E4E9OE99,MAJS,Cash,Money Market,USD
+SEC-0155,Roberts-Landry Ltd,QZPNIQFG5,USQZPNIQFG57,L9,Equity,Common Stock,USD
+SEC-0156,"Johnson, Miller and King SA",P15AHDBVZ,USP15AHDBVZ6,MAKS,Equity,Common Stock,USD
+SEC-0157,Cordova Group SA,BPT11F9I6,USBPT11F9I63,CGS,Equity,Common Stock,USD
+SEC-0158,"Bryan, Smith and Booth AG",VYLKFXHKC,USVYLKFXHKC1,SABA,Real Estate,Real Estate Fund,USD
+SEC-0159,Gutierrez-Lopez SA,YUBMXNSZO,USYUBMXNSZO8,S8,Real Estate,REIT,USD
+SEC-0160,Dean-Jimenez Corp,1R4KZ36U8,US1R4KZ36U82,C12,Alternatives,Private Equity,USD
+SEC-0161,Wolf-Harris plc,IHX74D0GJ,USIHX74D0GJ5,P7,Real Estate,REIT,USD
+SEC-0162,"Anderson, Roberts and Gilmore Inc",G10UR5L8A,USG10UR5L8A6,RAGI,Commodities,Commodity ETF,USD
+SEC-0163,Martinez-Dudley SA,9RIVH6T1N,US9RIVH6T1N9,S9,Fixed Income,Government Bond,USD
+SEC-0164,"Lloyd, Mckinney and Collins Ltd",JSRD9Q46N,USJSRD9Q46N3,MACL,Real Estate,Real Estate Fund,USD
+SEC-0165,Tran Inc AG,50ATVZKHI,US50ATVZKHI3,TIA,Cash,Money Market,USD
+SEC-0166,Gay Inc plc,T7M1R00Q0,UST7M1R00Q00,GIP,Real Estate,REIT,USD
+SEC-0167,Valentine-Holland Corp,ZR7TXCB48,USZR7TXCB484,C13,Alternatives,Hedge Fund,USD
+SEC-0168,Jimenez Ltd Inc,O4IZASNWY,USO4IZASNWY6,JLI,Commodities,Commodity ETF,USD
+SEC-0169,Hicks-Hill SA,RATATJ9A3,USRATATJ9A34,S10,Real Estate,Real Estate Fund,USD
+SEC-0170,Baird-Sanchez Corp,DDFGS3JON,USDDFGS3JON2,C14,Commodities,Futures Fund,USD
+SEC-0171,"Thomas, Lee and Greene AG",IZK3C9XBO,USIZK3C9XBO3,LAGA,Cash,Cash Equivalent,USD
+SEC-0172,"Suarez, Shields and Hill Inc",WZC4XL996,USWZC4XL9969,SAHI,Cash,Cash Equivalent,USD
+SEC-0173,Morgan-French Corp,6YUJ7YKTX,US6YUJ7YKTX0,C15,Equity,Common Stock,USD
+SEC-0174,Hoover-Campbell Inc,8V1ZOCFI4,US8V1ZOCFI46,I10,Fixed Income,Municipal Bond,USD
+SEC-0175,Monroe-Carpenter plc,1F90S9BP4,US1F90S9BP40,P8,Cash,Cash Equivalent,USD
+SEC-0176,"Burns, Hernandez and Ryan AG",8O1BJ9RM7,US8O1BJ9RM76,HARA,Alternatives,Real Assets,USD
+SEC-0177,Cook-Hines SA,VN1KICJN2,USVN1KICJN27,S11,Cash,Money Market,USD
+SEC-0178,Gibson-Morris Ltd,MD7Q1DDPU,USMD7Q1DDPU8,L10,Fixed Income,ETF,USD
+SEC-0179,Pollard and Sons Inc,AMDVLNKND,USAMDVLNKND4,PASI,Real Estate,Real Estate Fund,USD
+SEC-0180,"Reyes, Chase and Jenkins AG",SYGJJFGJK,USSYGJJFGJK4,CAJA,Real Estate,REIT,USD
+SEC-0181,Garner-Thornton Ltd,7ZRWQEAO4,US7ZRWQEAO47,L11,Equity,Preferred Stock,USD
+SEC-0182,Hughes-Alvarado plc,M349EL8HL,USM349EL8HL7,P9,Cash,Cash Equivalent,USD
+SEC-0183,"Pollard, Simpson and Johnson Ltd",0W82LK2N7,US0W82LK2N73,SAJL,Cash,Cash Equivalent,USD
+SEC-0184,"Sanford, Rivera and Garcia SA",1A07H23C4,US1A07H23C44,RAGS,Fixed Income,Corporate Bond,USD
+SEC-0185,Garcia-Lozano Corp,WIXZ2C9RO,USWIXZ2C9RO0,C16,Cash,Cash Equivalent,USD
+SEC-0186,Bowen Group AG,B8Z3V6DIX,USB8Z3V6DIX6,BGA,Real Estate,Real Estate Fund,USD
+SEC-0187,"Booker, Jones and Harrington AG",9YO18PAJS,US9YO18PAJS6,JAHA,Fixed Income,Government Bond,USD
+SEC-0188,Morgan-Schwartz plc,NQYYF9RK7,USNQYYF9RK73,P10,Real Estate,REIT,USD
+SEC-0189,"Miller, Murphy and Craig SA",FLQHRRPZL,USFLQHRRPZL2,MACS,Equity,Common Stock,USD
+SEC-0190,"James, Stewart and Higgins SA",E4XYF9IGF,USE4XYF9IGF6,SAHS1,Alternatives,Hedge Fund,USD
+SEC-0191,Brennan-Johnson plc,IOGXPBWHV,USIOGXPBWHV5,P11,Real Estate,Real Estate Fund,USD
+SEC-0192,Young Ltd SA,HKZ2U2TNH,USHKZ2U2TNH3,YLS,Cash,Money Market,USD
+SEC-0193,Bright-Francis SA,5SXVWVM4W,US5SXVWVM4W6,S12,Equity,Preferred Stock,USD
+SEC-0194,Good-Hodges AG,VYLIENFNV,USVYLIENFNV8,A10,Commodities,Futures Fund,USD
+SEC-0195,"Brennan, Wallace and Benson plc",GWYX9TRFL,USGWYX9TRFL4,WABP,Real Estate,Real Estate Fund,USD
+SEC-0196,Williams Inc Ltd,8RHNUXORZ,US8RHNUXORZ2,WIL,Cash,Money Market,USD
+SEC-0197,Howard-Jordan Corp,CB1KJTGQ0,USCB1KJTGQ02,C17,Cash,Cash Equivalent,USD
+SEC-0198,Schmidt PLC AG,E13N3BZT9,USE13N3BZT96,SPA,Cash,Money Market,USD
+SEC-0199,"Sparks, Jackson and Miller SA",1K9QM3P91,US1K9QM3P914,JAMS,Equity,ETF,USD
+SEC-0200,Harvey-Allen SA,VMZWFFHHC,USVMZWFFHHC4,S13,Fixed Income,Corporate Bond,USD

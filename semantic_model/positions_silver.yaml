@@ -1,0 +1,186 @@
+# =============================================================================
+# Gemstone Financial — Silver Positions Model (NAIVE / UNGOVERNED)
+# =============================================================================
+# THIS IS THE BROKEN SEMANTIC MODEL — intentionally naive.
+#
+# This model exposes SILVER.POSITIONS_INTEGRATED as-is. It provides no
+# ambiguity resolution, no grain documentation, no source system callouts,
+# and no synonym mapping. It is the "we already integrated it" state that
+# most organizations reach before governance.
+#
+# Cortex Analyst will generate confident SQL against this model. That SQL
+# will return wrong answers because the underlying table embeds ambiguities
+# A7–A11 that this model does not acknowledge or resolve.
+#
+# Compare results from this model against positions.yaml (Gold governed)
+# to demonstrate why the semantic layer is not optional.
+#
+# DEPLOYMENT
+# Staged to @GOLD.GSF_GOLD_STAGE/semantic/positions_silver.yaml by load_gold.py.
+# =============================================================================
+
+name: gsf_positions_silver_naive
+description: |
+  Position data for Gemstone Financial integrated from three source systems. Contains account, security, quantity, price, market value, cost basis, and unrealized gain/loss information.
+tables:
+  - name: positions
+    description: |
+      Integrated position data from all source systems. Contains holdings across all accounts and securities.
+    base_table:
+      database: GSF_DEMO
+      schema: SILVER
+      table: POSITIONS_INTEGRATED
+    dimensions:
+      - name: account_ref
+        synonyms:
+          - account
+          - fund
+          - portfolio
+        description: Account identifier.
+        expr: ACCOUNT_REF
+        data_type: TEXT
+        unique: false
+      - name: asset_class
+        synonyms:
+          - asset type
+          - sector
+          - sleeve
+        description: Asset class of the security.
+        expr: ASSET_CLASS
+        data_type: TEXT
+        unique: false
+        sample_values:
+          - Equity
+          - Fixed Income
+          - Alternatives
+      - name: currency
+        synonyms:
+          - ccy
+        description: Currency code.
+        expr: CURRENCY
+        data_type: TEXT
+        unique: false
+      - name: record_id
+        synonyms:
+          - id
+          - record
+        description: Unique record identifier.
+        expr: RECORD_ID
+        data_type: TEXT
+        unique: true
+      - name: security_master_id
+        synonyms:
+          - master id
+          - security id
+        description: Security master identifier (may be null for some securities).
+        expr: SECURITY_MASTER_ID
+        data_type: TEXT
+        unique: false
+      - name: security_ref
+        synonyms:
+          - cusip
+          - isin
+          - security
+          - ticker
+        description: Security identifier.
+        expr: SECURITY_REF
+        data_type: TEXT
+        unique: false
+      - name: security_ref_type
+        synonyms:
+          - identifier type
+        description: The type of security identifier (CUSIP, TICKER, or ISIN).
+        expr: SECURITY_REF_TYPE
+        data_type: TEXT
+        unique: false
+        sample_values:
+          - CUSIP
+          - TICKER
+          - ISIN
+      - name: source_system
+        synonyms:
+          - source
+          - system
+        description: The source system that provided this record.
+        expr: SOURCE_SYSTEM
+        data_type: TEXT
+        unique: false
+        sample_values:
+          - TOPAZ
+          - EMERALD
+          - RUBY
+    time_dimensions:
+      - name: position_date
+        synonyms:
+          - as of date
+          - date
+        description: The date of the position.
+        expr: POSITION_DATE
+        data_type: date
+    facts:
+      - name: cost_basis
+        synonyms:
+          - book value
+          - cost
+        description: Cost basis of the position.
+        expr: COST_BASIS
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: market_value
+        synonyms:
+          - market value
+          - MV
+          - value
+        description: Market value of the position.
+        expr: MARKET_VALUE
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: price
+        synonyms:
+          - market price
+          - unit price
+        description: Price per unit.
+        expr: PRICE
+        data_type: NUMBER
+        default_aggregation: avg
+      - name: quantity
+        synonyms:
+          - shares
+          - shares held
+          - units
+        description: Quantity held.
+        expr: QUANTITY
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: unrealized_gl
+        synonyms:
+          - unrealized gain
+          - unrealized loss
+          - unrealized P&L
+          - unrealized PnL
+        description: Unrealized gain or loss.
+        expr: UNREALIZED_GL
+        data_type: NUMBER
+        default_aggregation: sum
+    filters:
+      - name: ruby_system_positions
+        description: Filters for positions that originate from the Ruby source system. Use when questions ask about 'Ruby positions', 'positions from Ruby', 'Ruby system data', or 'Ruby source'. Helps analyze position data specifically from the Ruby system, particularly useful when investigating data quality issues or system-specific patterns like missing unrealized gain/loss information.
+        expr: source_system = 'RUBY'
+    primary_key:
+      columns:
+        - RECORD_ID
+verified_queries:
+  - name: How many positions from the Ruby system are missing unrealized gain/loss information?
+    question: How many positions from the Ruby system are missing unrealized gain/loss information?
+    sql: |-
+      SELECT
+        'Ruby rows with NULL unrealized_gl (A11)',
+        CAST(COUNT(*) AS VARCHAR)
+      FROM
+        positions
+      WHERE
+        source_system = 'RUBY'
+        AND unrealized_gl IS NULL
+    use_as_onboarding_question: false
+    verified_by: David Lowe
+    verified_at: 1774889251

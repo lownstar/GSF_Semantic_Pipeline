@@ -1,0 +1,538 @@
+# =============================================================================
+# Gemstone Financial — Positions Semantic Model
+# =============================================================================
+# Cortex Analyst semantic model for the GSF_DEMO.GOLD governed environment.
+#
+# Generated via Snowflake Semantic Model Generator (Snowsight → AI & ML →
+# Semantic Model), then enriched with A1–A11 ambiguity resolution content.
+# The generator scaffold guarantees structural validity against Snowflake's
+# internal protobuf schema. DO NOT hand-edit structural fields (primary_key,
+# base_table, relationships, data_type, default_aggregation, facts/metrics).
+#
+# KEY STRUCTURAL NOTE: Snowflake uses "facts:" (not "measures:") for numeric
+# columns in the Cortex Analyst YAML format.
+#
+# PORTFOLIO PITCH
+# This file must exist. How it was created can vary — hand-authored by a data
+# architect, generated from a data catalog, exported from a governance tool.
+# Without it, Cortex Analyst has only raw column names and guesses. With it,
+# every natural language query resolves against a governed, consistent model.
+#
+# AMBIGUITY REGISTRY REFERENCE
+# Each dimension and fact references the ambiguity code it resolves.
+# See docs/ambiguity_registry_v2.md for full descriptions.
+#
+# DEPLOYMENT
+# Staged to @GOLD.GSF_GOLD_STAGE/semantic/positions.yaml by load_gold.py.
+# Referenced at query time as the Cortex Analyst context path.
+# =============================================================================
+
+name: gsf_positions_semantic_model
+description: |
+  Governed position data for Gemstone Financial (GSF). Covers holdings across three legacy source systems — Topaz (custodian), Emerald (portfolio management), and Ruby (fund accounting) — unified into a single canonical data warehouse. All cross-source ambiguities are resolved: security identifiers (CUSIP/ISIN/ticker), account identifiers, price sources, position grain, and cost basis methods. Use this model to query total market value, cost basis, unrealized gain/loss, and position counts across any account, security, asset class, or date.
+tables:
+  - name: account
+    description: |
+      A client investment account. Each account exists in all three source systems under a different identifier: a custodian account number in Topaz (C-XXXXXX), a portfolio code in Emerald (PORT-XXXX), and a fund code in Ruby (FND-XXXX). This table is the master that links all three. Use account_id for all cross-source aggregation.
+    base_table:
+      database: GSF_DEMO
+      schema: GOLD
+      table: DW_ACCOUNT
+    dimensions:
+      - name: account_id
+        synonyms:
+          - account
+          - client account
+          - fund
+          - portfolio
+        description: |
+          Canonical account identifier (ACC-XXXX format). The single key used across all DW tables. Resolves A4: replaces the three source system keys (custodian_account_num, portfolio_code, fund_code) with one governed identifier.
+        expr: account_id
+        data_type: TEXT
+        unique: true
+        sample_values:
+          - ACC-0001
+          - ACC-0042
+          - ACC-0100
+      - name: account_name
+        synonyms:
+          - account description
+          - client name
+          - fund name
+          - portfolio name
+        description: Human-readable account name.
+        expr: account_name
+        data_type: TEXT
+        unique: false
+      - name: account_type
+        synonyms:
+          - account category
+          - client type
+        description: |
+          Account classification: Individual, Trust, Institutional, or Fund.
+        expr: account_type
+        data_type: TEXT
+        unique: false
+        sample_values:
+          - Individual
+          - Trust
+          - Institutional
+          - Fund
+      - name: base_currency
+        synonyms:
+          - account currency
+          - reporting currency
+        description: ISO 4217 base currency for the account (e.g., USD).
+        expr: base_currency
+        data_type: TEXT
+        unique: false
+      - name: custodian_account_num
+        synonyms:
+          - ACCT_NUM
+          - C number
+          - custodian number
+          - Topaz account number
+        description: |
+          Topaz (custodian) source key in C-XXXXXX format. Resolves A4: maps to account_id via this master table.
+        expr: custodian_account_num
+        data_type: TEXT
+        unique: true
+      - name: fund_code
+        synonyms:
+          - FND code
+          - fund identifier
+          - Ruby fund code
+        description: |
+          Ruby (fund accounting) source key in FND-XXXX format. Resolves A4: maps to account_id via this master table.
+        expr: fund_code
+        data_type: TEXT
+        unique: true
+      - name: portfolio_code
+        synonyms:
+          - Emerald portfolio code
+          - PORT code
+          - portfolioId
+        description: |
+          Emerald (portfolio management) source key in PORT-XXXX format. Resolves A4: maps to account_id via this master table.
+        expr: portfolio_code
+        data_type: TEXT
+        unique: true
+    filters:
+      - name: specific_account_filter
+        description: Filters for a specific account with ID 'ACC-0042'. Use when questions request information about this particular account, such as 'what is the total market value for account ACC-0042' or 'show me details for ACC-0042'. Helps analyze individual account performance and position details when focusing on a single client account.
+        expr: account_id = 'ACC-0042'
+    primary_key:
+      columns:
+        - ACCOUNT_ID
+  - name: security
+    description: |
+      A financial instrument held across Gemstone Financial accounts. Each security has three identifiers used by different source systems: a CUSIP (used by Topaz), an ISIN (used by Ruby), and a proprietary ticker (used by Emerald). This table is the complete security master — all 200 securities are present, unlike the partial stub used in Pipeline A which had 30 missing entries.
+    base_table:
+      database: GSF_DEMO
+      schema: GOLD
+      table: DW_SECURITY
+    dimensions:
+      - name: asset_class
+        synonyms:
+          - allocation category
+          - asset type
+          - sector
+          - sleeve
+        description: |
+          Asset class classification (e.g., Equity, Fixed Income, Alternatives, Real Estate, Commodities). Resolves A10: always populated for all 200 securities — unlike Pipeline A Silver where ~15% of rows had NULL asset_class due to unmastered securities.
+        expr: asset_class
+        data_type: TEXT
+        unique: false
+        sample_values:
+          - Equity
+          - Fixed Income
+          - Alternatives
+          - Real Estate
+          - Commodities
+      - name: cusip
+        synonyms:
+          - CUSIP identifier
+          - SEC_CUSIP
+          - Topaz security ID
+        description: |
+          9-character CUSIP identifier. Used by Topaz (custodian). Resolves A1: maps to security_id via this master table.
+        expr: cusip
+        data_type: TEXT
+        unique: true
+      - name: isin
+        synonyms:
+          - ISIN identifier
+          - isin_identifier
+          - Ruby security ID
+        description: |
+          12-character ISIN identifier. Used by Ruby (fund accounting). Resolves A1: maps to security_id via this master table.
+        expr: isin
+        data_type: TEXT
+        unique: true
+      - name: security_id
+        synonyms:
+          - holding
+          - instrument
+          - security
+        description: |
+          Canonical security identifier (SEC-XXXX format). Resolves A1: the single key that replaces CUSIP (Topaz), ticker (Emerald), and ISIN (Ruby).
+        expr: security_id
+        data_type: TEXT
+        unique: true
+        sample_values:
+          - SEC-0001
+          - SEC-0100
+          - SEC-0200
+      - name: security_name
+        synonyms:
+          - company
+          - issuer
+          - name
+          - security description
+        description: Full legal name of the security issuer.
+        expr: security_name
+        data_type: TEXT
+        unique: false
+      - name: security_type
+        synonyms:
+          - instrument type
+          - product type
+        description: |
+          Detailed security type (e.g., Common Stock, Corporate Bond, ETF, REIT, Hedge Fund, Futures Fund).
+        expr: security_type
+        data_type: TEXT
+        unique: false
+      - name: ticker
+        synonyms:
+          - Emerald security ID
+          - securityTicker
+          - stock symbol
+          - ticker symbol
+        description: |
+          Proprietary internal ticker. Used by Emerald (portfolio management). Resolves A1: maps to security_id via this master table.
+        expr: ticker
+        data_type: TEXT
+        unique: true
+    filters:
+      - name: fixed_income_securities
+        description: Filters for securities classified as 'Fixed Income' in the asset_class field. Use when questions ask about fixed income investments, bonds, or debt securities, such as 'what is the total cost basis of fixed income securities' or 'show fixed income positions'. Helps analyze fixed income allocation and exposure across portfolios.
+        expr: asset_class = 'Fixed Income'
+    primary_key:
+      columns:
+        - SECURITY_ID
+  - name: position
+    description: |
+      A position: one row per account × security as of the position date. Lots are collapsed to position level — this is the correct grain for portfolio aggregation. Market value uses the custodian end-of-day closing price as the single authoritative source. Unrealized gain/loss is computed for every position regardless of source system origin.
+    base_table:
+      database: GSF_DEMO
+      schema: GOLD
+      table: DW_POSITION
+    dimensions:
+      - name: account_id
+        synonyms:
+          - account
+          - portfolio
+        description: FK to DW_ACCOUNT. Join via account entity for account-level filtering.
+        expr: account_id
+        data_type: TEXT
+        unique: false
+      - name: currency
+        synonyms:
+          - denomination
+          - position currency
+        description: ISO 4217 currency code for this position.
+        expr: currency
+        data_type: TEXT
+        unique: false
+        sample_values:
+          - USD
+      - name: position_id
+        synonyms:
+          - position identifier
+        description: Canonical position identifier (POS-XXXXXXX).
+        expr: position_id
+        data_type: TEXT
+        unique: true
+      - name: security_id
+        synonyms:
+          - holding
+          - security
+        description: FK to DW_SECURITY. Join via security entity for security-level filtering.
+        expr: security_id
+        data_type: TEXT
+        unique: false
+    time_dimensions:
+      - name: position_date
+        synonyms:
+          - as of date
+          - date
+          - month end
+          - report date
+          - valuation date
+        description: |
+          Position snapshot date on a trade-date basis per GIPS performance reporting standards. Resolves A6: Topaz settlement dates, Emerald trade dates, and Ruby NAV dates are all normalized to this single canonical date in the DW.
+        expr: position_date
+        data_type: date
+    facts:
+      - name: cost_basis
+        synonyms:
+          - acquisition cost
+          - book value
+          - cost
+          - total cost
+        description: |
+          Total cost basis using specific identification: sum of acquisition_price × remaining_quantity for each contributing lot. Resolves A9: not average cost (Emerald method) or book cost (Ruby method) — specific identification is used consistently for all positions.
+        expr: cost_basis
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: market_price
+        synonyms:
+          - closing price
+          - price
+          - unit price
+        description: |
+          Custodian end-of-day closing price per unit. Resolves A2: this is the single authoritative price source for all positions, regardless of which source system originally contributed the position data. PM evaluated prices (Emerald) and NAV prices (Ruby) are not used here.
+        expr: market_price
+        data_type: NUMBER
+        default_aggregation: avg
+      - name: market_value
+        synonyms:
+          - market value
+          - marketValue
+          - MKT_VAL
+          - MV
+          - position value
+          - total_nav_value
+          - value
+        description: |
+          Market value = quantity × market_price (custodian EOD). Resolves A2 (single price source) and A5/A7 (position-level grain). Resolves A3: this is the single canonical name for what Topaz calls MKT_VAL, Emerald calls marketValue, and Ruby calls total_nav_value.
+        expr: market_value
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: quantity
+        synonyms:
+          - position size
+          - shares
+          - shares held
+          - units
+        description: |
+          Position-level quantity (shares or units held). Lots are collapsed — this is safe for SUM() across accounts and securities. Resolves A5/A7: do not confuse with DW_TRADE_LOT.remaining_quantity (lot-level grain).
+        expr: quantity
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: unrealized_gain_loss
+        synonyms:
+          - open P&L
+          - unrealized gain
+          - unrealized loss
+          - unrealized P&L
+          - unrealized PnL
+          - unrealizedPnL
+          - UNRLZD_GL
+        description: |
+          Unrealized gain/loss = market_value − cost_basis, computed at the canonical DW grain. Resolves A11: populated for ALL positions regardless of source system — Ruby positions have a calculated G/L here, unlike Pipeline A Silver where all Ruby rows had NULL unrealized_gl (22% silent exclusion).
+        expr: unrealized_gain_loss
+        data_type: NUMBER
+        default_aggregation: sum
+    metrics:
+      - name: market_value_sum
+        description: Calculates the sum of market values for positions based on custodian end-of-day closing prices. Use when questions ask about 'market value', 'position value', or 'current value'. Helps evaluate position sizes, track portfolio values, and analyze investment exposures at various levels.
+        expr: SUM(market_value)
+      - name: portfolio_allocation_percentage
+        description: Calculates the percentage allocation of market value relative to total portfolio value. Use when questions ask about 'allocation', 'portfolio weight', 'percentage of AUM', or 'what portion of assets'. Helps analyze portfolio composition, monitor asset allocation compliance, and track diversification across different segments.
+        expr: SUM(market_value) / SUM(SUM(market_value)) OVER ()
+      - name: total_aum
+        description: Calculates the total Assets Under Management (AUM) across all positions. Use when questions ask about 'total portfolio value', 'AUM', 'total assets', or 'overall portfolio size'. Helps track total portfolio value, measure firm-wide asset growth, and evaluate overall investment scale.
+        expr: SUM(SUM(market_value)) OVER ()
+      - name: total_cost_basis
+        description: Calculates the total cost basis using specific identification method across positions. Use when questions ask about 'cost basis', 'book value', 'total cost', or 'acquisition cost'. Helps calculate unrealized gains/losses, track investment costs, and support tax reporting requirements.
+        expr: SUM(cost_basis)
+      - name: total_portfolio_value
+        description: Calculates the total market value across all positions. Use when questions ask about 'total portfolio value', 'total holdings value', or 'total market value'. Helps measure portfolio size, track investment performance, and analyze total exposure.
+        expr: SUM(SUM(market_value))
+      - name: total_quantity
+        description: Calculates the total quantity of shares or units held across positions. Use when questions ask about 'total shares', 'position size', 'number of units', or 'quantity held'. Helps track position sizes, monitor ownership levels, and analyze holdings concentration.
+        expr: SUM(quantity)
+    primary_key:
+      columns:
+        - POSITION_ID
+  - name: trade_lot
+    description: |
+      Individual tax lots contributing to positions. One lot per acquisition event. Use for lot-level analysis (tax harvesting, specific identification cost, holding period queries). Do NOT aggregate lot quantity alongside position quantity — they are different grains. For portfolio-level aggregation always use the position entity.
+    base_table:
+      database: GSF_DEMO
+      schema: GOLD
+      table: DW_TRADE_LOT
+    dimensions:
+      - name: account_id
+        synonyms:
+          - account
+        description: FK to DW_ACCOUNT.
+        expr: account_id
+        data_type: TEXT
+        unique: false
+      - name: lot_id
+        synonyms:
+          - lot identifier
+          - trade lot
+        description: Trade lot identifier (LOT-XXXXXXX).
+        expr: lot_id
+        data_type: TEXT
+        unique: true
+      - name: security_id
+        synonyms:
+          - security
+        description: FK to DW_SECURITY.
+        expr: security_id
+        data_type: TEXT
+        unique: false
+    time_dimensions:
+      - name: acquisition_date
+        synonyms:
+          - buy date
+          - lot date
+          - purchase date
+        description: Date the lot was acquired.
+        expr: acquisition_date
+        data_type: date
+    facts:
+      - name: acquisition_price
+        synonyms:
+          - cost per unit
+          - purchase price
+        description: Price per unit at the time the lot was acquired.
+        expr: acquisition_price
+        data_type: NUMBER
+        default_aggregation: avg
+      - name: cost_basis
+        synonyms:
+          - lot book value
+          - lot cost
+        description: |
+          Cost basis for this specific lot = acquisition_price × remaining_quantity. Specific identification method.
+        expr: cost_basis
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: remaining_quantity
+        synonyms:
+          - lot quantity
+          - lot shares
+          - units remaining
+        description: |
+          Current quantity remaining in this lot after any partial disposals. This is lot-level grain — do not sum alongside position.quantity. Resolves A5/A7: explicitly scoped here to prevent double-counting.
+        expr: remaining_quantity
+        data_type: NUMBER
+        default_aggregation: sum
+    primary_key:
+      columns:
+        - LOT_ID
+relationships:
+  - name: position_to_account
+    left_table: position
+    right_table: account
+    relationship_columns:
+      - left_column: account_id
+        right_column: ACCOUNT_ID
+    join_type: left_outer
+    relationship_type: many_to_one
+  - name: position_to_security
+    left_table: position
+    right_table: security
+    relationship_columns:
+      - left_column: security_id
+        right_column: SECURITY_ID
+    join_type: left_outer
+    relationship_type: many_to_one
+  - name: trade_lot_to_account
+    left_table: trade_lot
+    right_table: account
+    relationship_columns:
+      - left_column: account_id
+        right_column: ACCOUNT_ID
+    join_type: left_outer
+    relationship_type: many_to_one
+  - name: trade_lot_to_security
+    left_table: trade_lot
+    right_table: security
+    relationship_columns:
+      - left_column: security_id
+        right_column: SECURITY_ID
+    join_type: left_outer
+    relationship_type: many_to_one
+verified_queries:
+  - name: total_market_value_by_account
+    question: What is the total market value of account ACC-0042?
+    sql: |
+      SELECT
+          a.account_id,
+          a.account_name,
+          SUM(p.market_value) AS total_market_value
+      FROM GSF_DEMO.GOLD.DW_POSITION p
+      JOIN GSF_DEMO.GOLD.DW_ACCOUNT a ON p.account_id = a.account_id
+      WHERE a.account_id = 'ACC-0042'
+      GROUP BY a.account_id, a.account_name;
+  - name: total_quantity_by_security
+    question: What is the total quantity held across all accounts for each security?
+    sql: |
+      SELECT
+          s.security_id,
+          s.security_name,
+          s.ticker,
+          SUM(p.quantity) AS total_quantity
+      FROM GSF_DEMO.GOLD.DW_POSITION p
+      JOIN GSF_DEMO.GOLD.DW_SECURITY s ON p.security_id = s.security_id
+      GROUP BY s.security_id, s.security_name, s.ticker
+      ORDER BY total_quantity DESC;
+  - name: positions_with_unrealized_losses
+    question: Show me all positions with unrealized losses greater than $10,000
+    sql: |
+      SELECT
+          a.account_id,
+          a.account_name,
+          s.security_name,
+          s.asset_class,
+          p.market_value,
+          p.cost_basis,
+          p.unrealized_gain_loss
+      FROM GSF_DEMO.GOLD.DW_POSITION p
+      JOIN GSF_DEMO.GOLD.DW_ACCOUNT  a ON p.account_id  = a.account_id
+      JOIN GSF_DEMO.GOLD.DW_SECURITY s ON p.security_id = s.security_id
+      WHERE p.unrealized_gain_loss < -10000
+      ORDER BY p.unrealized_gain_loss ASC;
+  - name: asset_class_allocation
+    question: What percentage of total AUM is allocated to each asset class?
+    sql: |
+      SELECT
+          s.asset_class,
+          SUM(p.market_value)                          AS sleeve_market_value,
+          SUM(p.market_value) / SUM(SUM(p.market_value)) OVER () AS pct_of_aum
+      FROM GSF_DEMO.GOLD.DW_POSITION p
+      JOIN GSF_DEMO.GOLD.DW_SECURITY s ON p.security_id = s.security_id
+      GROUP BY s.asset_class
+      ORDER BY sleeve_market_value DESC;
+  - name: total_cost_basis_fixed_income
+    question: What is the total cost basis for the fixed income sleeve across all accounts?
+    sql: |
+      SELECT
+          SUM(p.cost_basis) AS total_cost_basis_fixed_income
+      FROM GSF_DEMO.GOLD.DW_POSITION p
+      JOIN GSF_DEMO.GOLD.DW_SECURITY s ON p.security_id = s.security_id
+      WHERE s.asset_class = 'Fixed Income';
+  - name: positions_as_of_date
+    question: Show me all positions as of December 31, 2024
+    sql: |
+      SELECT
+          a.account_id,
+          a.account_name,
+          s.security_name,
+          s.asset_class,
+          p.quantity,
+          p.market_price,
+          p.market_value,
+          p.unrealized_gain_loss,
+          p.position_date
+      FROM GSF_DEMO.GOLD.DW_POSITION p
+      JOIN GSF_DEMO.GOLD.DW_ACCOUNT  a ON p.account_id  = a.account_id
+      JOIN GSF_DEMO.GOLD.DW_SECURITY s ON p.security_id = s.security_id
+      WHERE p.position_date = '2024-12-31'
+      ORDER BY a.account_id, p.market_value DESC;
