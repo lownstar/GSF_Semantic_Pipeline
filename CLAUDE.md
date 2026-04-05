@@ -51,7 +51,7 @@ Cortex still gets it wrong — and what the semantic model adds."*
 | 3 | S3 delivery layer | Done |
 | 4 | dbt integration — four-tier comparison (Bronze/Silver/Naive Gold/Semantic Gold) | Done |
 | 5 | Unified orchestrator (run_pipeline.py) | Done |
-| 6 | Documentation polish | Next |
+| 6 | Documentation polish | Done |
 
 ---
 
