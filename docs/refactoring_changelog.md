@@ -43,3 +43,44 @@ All "Pipeline B" references changed to "Semantic Enriched Pipeline" across:
 
 `README.md` rewritten with new architecture diagram, updated project structure,
 and corrected status (Epic 5 marked complete).
+
+---
+
+## Step 2: Extract Infrastructure + Refactor CLAUDE.md (2026-04-04)
+
+### Moved
+
+| From | To | Why |
+|---|---|---|
+| `pipeline_naive/GSF_setup.sql` | `infrastructure/snowflake_setup.sql` | Consolidate one-time setup SQL |
+| `pipeline_naive/setup_cortex.sql` | `infrastructure/cortex_setup.sql` | Consolidate one-time setup SQL |
+
+### Refactored
+
+CLAUDE.md split from 800+ lines into focused documents:
+- `CLAUDE.md` (~90 lines): project overview, conventions, quick start
+- `docs/architecture.md`: lifecycle phases, data flow, Snowflake objects
+- `docs/runbook.md`: step-by-step pipeline execution instructions
+- `docs/decisions.md`: architectural decision log with rationale
+- `docs/epic_history.md`: Epic 1-5 completion records
+
+---
+
+## Step 3: S3 Delivery Layer (2026-04-04)
+
+### Created
+
+| Path | Purpose |
+|---|---|
+| `delivery/__init__.py` | Package init |
+| `delivery/config.py` | S3 bucket, prefix, and file mapping configuration |
+| `delivery/deliver.py` | Phase 2: boto3 upload of source CSVs to S3 landing zone |
+| `infrastructure/s3_external_stage.sql` | Snowflake storage integration + external stage DDL |
+
+### Updated
+
+| Path | Change |
+|---|---|
+| `pipeline_naive/load_bronze.py` | Added `--source s3\|local` flag; S3 loads via external stage COPY INTO |
+| `requirements.txt` | Added `boto3>=1.34.0` |
+| `.env.example` | Added AWS credential placeholders (commented out) |
