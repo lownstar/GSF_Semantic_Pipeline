@@ -65,9 +65,9 @@ LEGACY SOURCE SYSTEMS (3 synthetic feeds, different schemas)
              GOLD.DW_ACCOUNT                  All 3 source account keys mapped
              GOLD.DW_SECURITY                 Zero NULL unrealized_gain_loss
              GOLD.DW_TRADE_LOT                Explicit lot grain
-             semantic_model/positions.yaml    Resolves A1-A11 explicitly
+             semantic_model/positions_gold.yaml    Resolves A1-A11 explicitly
                                               [Phase 6: Cortex Analyst]
-                                              queries GOLD via positions.yaml
+                                              queries GOLD via positions_gold.yaml
                                               -> correct answers
                                                       |
                                                       v [Phase 7: Analysis]

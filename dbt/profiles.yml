@@ -1,0 +1,15 @@
+gsf_demo:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_FILE', '') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD', '') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'GSF_ROLE') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'GSF_DEMO') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'GSF_WH') }}"
+      schema: BRONZE
+      threads: 4
+      client_session_keep_alive: false

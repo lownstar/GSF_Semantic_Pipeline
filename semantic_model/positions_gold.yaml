@@ -23,7 +23,7 @@
 # See docs/ambiguity_registry_v2.md for full descriptions.
 #
 # DEPLOYMENT
-# Staged to @GOLD.GSF_GOLD_STAGE/semantic/positions.yaml by load_gold.py.
+# Staged to @GOLD.GSF_GOLD_STAGE/semantic/positions_gold.yaml by load_gold.py.
 # Referenced at query time as the Cortex Analyst context path.
 # =============================================================================
 

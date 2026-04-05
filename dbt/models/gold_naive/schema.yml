@@ -1,0 +1,62 @@
+version: 2
+
+models:
+  - name: positions_naive
+    description: >
+      Assumption-based Gold positions table. Derived from SILVER.POSITIONS_INTEGRATED
+      with five wrong assumptions applied during aggregation. Looks like a valid Gold
+      aggregate — canonical column names, no obvious errors — but produces wrong answers
+      for all ambiguity-sensitive Cortex queries. In some cases worse than Silver because
+      the aggregation bakes the errors in permanently.
+
+      Wrong assumptions:
+        1. All prices equivalent — blends custodian EOD, PM evaluated, and NAV prices.
+        2. Quantities are comparable — lot-level Topaz rows inflated ~2-3x vs position-level.
+        3. Unmastered rows dropped — WHERE security_master_id IS NOT NULL excludes ~15% of AUM.
+        4. NULL unrealized_gl propagated — Ruby rows (22%) excluded from G/L aggregations.
+        5. Account refs unresolved — raw source keys passed through; canonical account_id absent.
+    columns:
+      - name: security_master_id
+        description: >
+          Canonical security ID from the stub master. Only present for the 170 mastered
+          securities; 30 securities (~15% of positions) are excluded before this model runs.
+          AMBIGUITY A8/A10: those positions do not appear in any aggregation in this model.
+        tests: [not_null]
+      - name: account_ref
+        description: >
+          Account identifier in raw source format (C-XXXXXX / PORT-XXXX / FND-XXXX).
+          AMBIGUITY A3/A4: queries for a canonical account (e.g., ACC-0042) cannot be
+          resolved; Cortex must guess the correct source-system key.
+        tests: [not_null]
+      - name: source_system
+        description: Source system (TOPAZ, EMERALD, RUBY).
+        tests:
+          - not_null
+          - accepted_values:
+              values: [TOPAZ, EMERALD, RUBY]
+      - name: position_date
+        description: Position date in source-system semantics (settlement / trade / NAV).
+        tests: [not_null]
+      - name: asset_class
+        description: Asset class from stub. May be NULL for edge cases not caught by the WHERE filter.
+      - name: avg_price
+        description: >
+          Average price across source rows. AMBIGUITY A2: blends three price methodologies
+          (custodian EOD, PM ±0.3%, NAV ±0.5%). Not a valid benchmark price.
+      - name: total_quantity
+        description: >
+          Sum of quantity across all source rows. AMBIGUITY A7: Topaz lot-level rows
+          inflate Fixed Income totals by ~2-3x versus the true position-level count.
+      - name: total_market_value
+        description: Sum of market_value. Computed from blended prices × inflated quantities.
+      - name: total_unrealized_gl
+        description: >
+          Sum of unrealized_gl. AMBIGUITY A11: Ruby rows have NULL unrealized_gl;
+          SUM excludes them silently. Result is systematically understated by ~22%.
+      - name: total_cost_basis
+        description: >
+          Sum of cost_basis. AMBIGUITY A9: mixes specific lot cost (Topaz), avg cost
+          (Emerald), and book cost (Ruby). Not reconcilable.
+      - name: source_row_count
+        description: Number of Silver rows that contributed to this aggregate.
+        tests: [not_null]

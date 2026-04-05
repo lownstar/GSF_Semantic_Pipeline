@@ -12,7 +12,7 @@
 # will return wrong answers because the underlying table embeds ambiguities
 # A7–A11 that this model does not acknowledge or resolve.
 #
-# Compare results from this model against positions.yaml (Gold governed)
+# Compare results from this model against positions_gold.yaml (Gold governed)
 # to demonstrate why the semantic layer is not optional.
 #
 # DEPLOYMENT

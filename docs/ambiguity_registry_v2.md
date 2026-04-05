@@ -13,7 +13,7 @@ they are the same ambiguities that exist in real production financial data envir
 when no semantic layer governs multiple source systems.
 
 This registry is referenced by:
-- `semantic_model/positions.yaml` (Epic 3) — each ambiguity maps to one or more metric/dimension definitions
+- `semantic_model/positions_gold.yaml` (Epic 3) — each ambiguity maps to one or more metric/dimension definitions
 - The Cortex Analyst standard question set (Epic 4) — at least one question per ambiguity
 
 **A1–A6** exist in the three raw gemstone source files (`positions_topaz.csv`,
@@ -461,7 +461,7 @@ narrative. Ambiguities A1–A6 are visible in the raw tables; A7–A11 are the m
 insidious failures hidden in the integrated table.
 
 **Epic 3 (Semantic Enriched Pipeline / Semantic Model):**
-Each ambiguity maps to one or more metric/dimension definitions in `semantic_model/positions.yaml`.
+Each ambiguity maps to one or more metric/dimension definitions in `semantic_model/positions_gold.yaml`.
 The YAML should reference this registry explicitly in its comments (e.g., `# resolves A1`).
 
 **Epic 4 (Cortex Analyst Question Set):**

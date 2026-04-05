@@ -17,7 +17,7 @@ Checks:
   GC9   DW_POSITION: zero NULL unrealized_gain_loss (resolves A11)
   GC10  DW_SECURITY: zero NULL asset_class (resolves A10)
   GC11  DW_SECURITY: 200 rows — 30 more than Bronze stub (resolves A8)
-  GC12  Semantic model staged at @GSF_GOLD_STAGE/semantic/positions.yaml
+  GC12  Semantic model staged at @GSF_GOLD_STAGE/semantic/positions_gold.yaml
 
 Usage:
   python pipeline_semantic/validate_gold.py
@@ -33,7 +33,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 STAGE_NAME   = "GOLD.GSF_GOLD_STAGE"
-SEMANTIC_KEY = "semantic/positions.yaml"
+SEMANTIC_KEY = "semantic/positions_gold.yaml"
 
 EXPECTED_COUNTS = {
     "GOLD.DW_ACCOUNT":   100,
@@ -191,12 +191,12 @@ def run() -> None:
         # ── GC12: Semantic model staged ───────────────────────────────────────
         cur.execute(f"LIST @{STAGE_NAME}/semantic/")
         staged_files = [row[0] for row in cur.fetchall()]
-        yaml_staged = any("positions.yaml" in f for f in staged_files)
+        yaml_staged = any("positions_gold.yaml" in f for f in staged_files)
         if yaml_staged:
-            print(f"  OK   GC12 Semantic model staged at @{STAGE_NAME}/semantic/positions.yaml")
+            print(f"  OK   GC12 Semantic model staged at @{STAGE_NAME}/semantic/positions_gold.yaml")
         else:
-            errors.append(f"GC12 FAIL: positions.yaml not found in @{STAGE_NAME}/semantic/")
-            print(f"  FAIL GC12 Semantic model not staged — run load_gold.py after authoring positions.yaml")
+            errors.append(f"GC12 FAIL: positions_gold.yaml not found in @{STAGE_NAME}/semantic/")
+            print(f"  FAIL GC12 Semantic model not staged — run load_gold.py after authoring positions_gold.yaml")
 
     finally:
         cur.close()

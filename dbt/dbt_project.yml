@@ -1,0 +1,26 @@
+name: gsf_demo
+version: "1.0.0"
+profile: gsf_demo
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  gsf_demo:
+    silver:
+      +schema: SILVER
+      +materialized: table
+    gold_naive:
+      +schema: GOLD_NAIVE
+      +materialized: table
+    gold_semantic:
+      +schema: GOLD
+      +materialized: table
+
+seeds:
+  gsf_demo:
+    +schema: GOLD
+    +quote_columns: false

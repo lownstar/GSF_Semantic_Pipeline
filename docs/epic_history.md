@@ -55,10 +55,10 @@ Key design: every source file is derivable from canonical DW with deterministic 
 
 **Row counts:** ACCOUNT=100 / SECURITY=200 / POSITION=4,886 / TRADE_LOT=12,388
 
-**Semantic model:** `semantic_model/positions.yaml`
+**Semantic model:** `semantic_model/positions_gold.yaml`
 - Generated via Snowflake Semantic Model Generator, enriched with A1-A11 descriptions
 - 4 tables, 4 relationships, dimensions with synonyms, facts, filters, metrics, 6 verified queries
-- Staged to `@GSF_GOLD_STAGE/semantic/positions.yaml`
+- Staged to `@GSF_GOLD_STAGE/semantic/positions_gold.yaml`
 
 **Scripts (now in `pipeline_semantic/`):**
 - `setup_gold.sql`, `load_gold.py`, `validate_gold.py`
@@ -70,7 +70,7 @@ Key design: every source file is derivable from canonical DW with deterministic 
 **Status:** Complete (2026-03-30)
 
 **Key insight:** Cortex Analyst requires a YAML for every query. Both environments need one:
-- Gold (governed): `semantic_model/positions.yaml`
+- Gold (governed): `semantic_model/positions_gold.yaml`
 - Silver (naive): `semantic_model/positions_silver.yaml`
 
 **Auth:** Session token from `conn._rest._token` (key-pair JWT removed -- caused stage 404s)

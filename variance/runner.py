@@ -1,12 +1,19 @@
 """
-Variance runner — asks all 11 questions against both the Silver and Gold
-Cortex Analyst semantic models, scores the results against pre-computed ground
+Variance runner — asks all 11 questions against any combination of the four
+Cortex Analyst semantic models, scores results against pre-computed ground
 truth, and saves a timestamped JSON to variance/results/.
 
+Four models:
+  bronze     — raw Bronze tables (fragmented, no cross-source joins)
+  silver     — SILVER.POSITIONS_INTEGRATED (naive integration, A7–A11 embedded)
+  gold_naive — GOLD_NAIVE.POSITIONS_NAIVE (assumption-based Gold, possibly worse)
+  gold       — GOLD DW tables with semantic model (governed, correct answers)
+
 Usage:
-  python variance/runner.py              # runs all 11 questions x 2 models
-  python variance/runner.py --dry-run    # print questions and ground truth, no API calls
-  python variance/runner.py --model gold # run Gold model only
+  python variance/runner.py                         # all 4 models
+  python variance/runner.py --model gold            # single model
+  python variance/runner.py --model gold silver     # two models
+  python variance/runner.py --dry-run               # ground truth only, no API
 
 The saved JSON is the input for the Streamlit visualization:
   streamlit run app/streamlit_app.py
@@ -19,17 +26,17 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Ensure project root is on sys.path so cortex and variance packages are importable
-# when this script is executed as `python variance/runner.py` from the project root.
 _PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(_PROJECT_ROOT))
 
-from cortex.query_cortex import _get_connection, ask_cortex, execute_sql, _ensure_silver_staged
+from cortex.query_cortex import _get_connection, ask_cortex, execute_sql, _ensure_staged
 from variance.comparator import score_run
 from variance.ground_truth import compute_all, print_ground_truth
 from variance.questions import QUESTIONS
 
 _RESULTS_DIR = _PROJECT_ROOT / "variance" / "results"
+
+ALL_MODELS = ["bronze", "silver", "gold_naive", "gold"]
 
 
 def _run_question(question_text: str, model_key: str, conn) -> dict:
@@ -53,8 +60,10 @@ def _run_question(question_text: str, model_key: str, conn) -> dict:
         return {"sql": None, "rows": [], "error": str(exc)}
 
 
-def run(models: list[str] = ("gold", "silver"), dry_run: bool = False) -> Path:
+def run(models: list[str] = None, dry_run: bool = False) -> Path:
     """Run all questions against the specified models and save results JSON."""
+    if models is None:
+        models = ALL_MODELS
 
     ground_truths = compute_all()
     print("\nGround truth (computed from data/seed_v2/):\n")
@@ -66,9 +75,10 @@ def run(models: list[str] = ("gold", "silver"), dry_run: bool = False) -> Path:
 
     conn = _get_connection()
 
-    if "silver" in models:
-        print("\nEnsuring Silver YAML is staged...")
-        _ensure_silver_staged(conn)
+    # Ensure each model's YAML is staged before running questions
+    for model in models:
+        print(f"\nEnsuring {model} YAML is staged...")
+        _ensure_staged(model, conn)
 
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     timestamp = datetime.now(timezone.utc).isoformat()
@@ -110,7 +120,7 @@ def run(models: list[str] = ("gold", "silver"), dry_run: bool = False) -> Path:
             "result_type": q.result_type,
             "ground_truth": ground_truths[q.id],
         }
-        for model in ("gold", "silver"):
+        for model in ALL_MODELS:
             if model in models:
                 raw = model_raw[model][q.id]
                 scored = model_scored[model][q.id]
@@ -126,9 +136,9 @@ def run(models: list[str] = ("gold", "silver"), dry_run: bool = False) -> Path:
                 entry[model] = None
         questions_output.append(entry)
 
-    # Summary
-    summary: dict = {}
-    for model in ("gold", "silver"):
+    # Summary stats per model
+    summary: dict = {"total_questions": len(QUESTIONS), "models_run": list(models)}
+    for model in ALL_MODELS:
         if model in models:
             statuses = [model_scored[model][q.id]["status"] for q in QUESTIONS]
             correct = statuses.count("CORRECT")
@@ -137,13 +147,6 @@ def run(models: list[str] = ("gold", "silver"), dry_run: bool = False) -> Path:
         else:
             summary[f"{model}_correct"] = None
             summary[f"{model}_accuracy_pct"] = None
-
-    summary["total_questions"] = len(QUESTIONS)
-    summary["questions_diverge"] = sum(
-        1 for q in QUESTIONS
-        if model_scored.get("gold", {}).get(q.id, {}).get("status") != "CORRECT"
-        or model_scored.get("silver", {}).get(q.id, {}).get("status") != "CORRECT"
-    ) if len(models) == 2 else None
 
     output = {
         "run_id": run_id,
@@ -159,10 +162,11 @@ def run(models: list[str] = ("gold", "silver"), dry_run: bool = False) -> Path:
 
     print(f"\n{'='*60}")
     print(f"  Results saved: {out_path}")
-    for model in ("gold", "silver"):
+    for model in ALL_MODELS:
         if model in models:
-            print(f"  {model.capitalize()}: {summary[f'{model}_correct']}/{len(QUESTIONS)} correct "
-                  f"({summary[f'{model}_accuracy_pct']}%)")
+            correct = summary[f"{model}_correct"]
+            pct = summary[f"{model}_accuracy_pct"]
+            print(f"  {model:<12}: {correct}/{len(QUESTIONS)} correct ({pct}%)")
     print(f"{'='*60}\n")
 
     return out_path
@@ -170,13 +174,14 @@ def run(models: list[str] = ("gold", "silver"), dry_run: bool = False) -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Run all variance questions against Cortex Analyst (Gold and/or Silver)"
+        description="Run variance questions against Cortex Analyst (1-4 model tiers)"
     )
     parser.add_argument(
         "--model",
-        choices=["gold", "silver", "both"],
-        default="both",
-        help="Which model(s) to run (default: both)",
+        choices=ALL_MODELS + ["all"],
+        nargs="+",
+        default=["all"],
+        help="Model(s) to run: bronze silver gold_naive gold all (default: all)",
     )
     parser.add_argument(
         "--dry-run",
@@ -185,10 +190,10 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if args.model == "both":
-        models = ["gold", "silver"]
+    if "all" in args.model:
+        models = ALL_MODELS
     else:
-        models = [args.model]
+        models = args.model
 
     run(models=models, dry_run=args.dry_run)
 

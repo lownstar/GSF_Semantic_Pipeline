@@ -1,0 +1,101 @@
+account_id,account_name,account_type,base_currency,custodian_account_num,portfolio_code,fund_code,is_active
+ACC-0001,"Rodriguez, Figueroa and Sanchez Fund",Individual,USD,C-877572,PORT-0001,FND-0001,True
+ACC-0002,Doyle Ltd Portfolio,Trust,USD,C-334053,PORT-0002,FND-0002,True
+ACC-0003,"Mcclain, Miller and Henderson Fund",Institutional,USD,C-809570,PORT-0003,FND-0003,True
+ACC-0004,Davis and Sons Fund,Fund,USD,C-719176,PORT-0004,FND-0004,True
+ACC-0005,"Guzman, Hoffman and Baldwin Fund",Endowment,USD,C-131244,PORT-0005,FND-0005,True
+ACC-0006,"Gardner, Robinson and Lawrence Portfolio",Individual,USD,C-343962,PORT-0006,FND-0006,True
+ACC-0007,Blake and Sons Fund,Fund,USD,C-688508,PORT-0007,FND-0007,True
+ACC-0008,"Henderson, Ramirez and Lewis Trust",Institutional,USD,C-331148,PORT-0008,FND-0008,True
+ACC-0009,Garcia-James Account,Endowment,USD,C-948749,PORT-0009,FND-0009,True
+ACC-0010,Abbott-Munoz Portfolio,Individual,USD,C-832052,PORT-0010,FND-0010,True
+ACC-0011,Blair PLC Account,Endowment,USD,C-391369,PORT-0011,FND-0011,True
+ACC-0012,Dudley Group Portfolio,Institutional,USD,C-900581,PORT-0012,FND-0012,True
+ACC-0013,Arnold Ltd Fund,Trust,USD,C-197251,PORT-0013,FND-0013,True
+ACC-0014,"Mcclure, Ward and Lee Fund",Endowment,USD,C-476417,PORT-0014,FND-0014,True
+ACC-0015,Williams and Sons Account,Trust,USD,C-946335,PORT-0015,FND-0015,True
+ACC-0016,Galloway-Wyatt Trust,Individual,USD,C-662275,PORT-0016,FND-0016,True
+ACC-0017,James Group Trust,Individual,USD,C-182627,PORT-0017,FND-0017,True
+ACC-0018,"Flowers, Martin and Kelly Account",Fund,USD,C-969693,PORT-0018,FND-0018,True
+ACC-0019,"Adams, Zuniga and Wong Account",Fund,USD,C-705397,PORT-0019,FND-0019,True
+ACC-0020,"Reid, Ferguson and Sanchez Fund",Institutional,USD,C-148050,PORT-0020,FND-0020,True
+ACC-0021,Gray-Mayo Account,Institutional,USD,C-183667,PORT-0021,FND-0021,True
+ACC-0022,"Watts, Robinson and Nguyen Fund",Institutional,USD,C-498591,PORT-0022,FND-0022,True
+ACC-0023,Perez Inc Trust,Trust,USD,C-766563,PORT-0023,FND-0023,True
+ACC-0024,Morales-Jones Portfolio,Trust,USD,C-488162,PORT-0024,FND-0024,True
+ACC-0025,"Walter, Edwards and Rios Portfolio",Trust,USD,C-802729,PORT-0025,FND-0025,True
+ACC-0026,Wilkerson-Day Fund,Trust,USD,C-738720,PORT-0026,FND-0026,True
+ACC-0027,Baker and Sons Portfolio,Institutional,USD,C-271339,PORT-0027,FND-0027,True
+ACC-0028,"Hoffman, Baker and Richards Trust",Endowment,USD,C-383060,PORT-0028,FND-0028,True
+ACC-0029,"Ross, Robinson and Bright Portfolio",Fund,USD,C-817870,PORT-0029,FND-0029,True
+ACC-0030,"Snyder, Campos and Callahan Fund",Trust,USD,C-340174,PORT-0030,FND-0030,True
+ACC-0031,Burton Ltd Account,Individual,USD,C-520651,PORT-0031,FND-0031,True
+ACC-0032,Carlson-Cruz Fund,Trust,USD,C-321231,PORT-0032,FND-0032,True
+ACC-0033,"Ferrell, Rice and Maddox Account",Fund,USD,C-322955,PORT-0033,FND-0033,True
+ACC-0034,Frazier Inc Trust,Endowment,USD,C-774079,PORT-0034,FND-0034,True
+ACC-0035,"Dyer, Potter and Mack Portfolio",Endowment,USD,C-377746,PORT-0035,FND-0035,True
+ACC-0036,Rodriguez-Graham Portfolio,Institutional,USD,C-881177,PORT-0036,FND-0036,True
+ACC-0037,Smith-Bowen Account,Fund,USD,C-883300,PORT-0037,FND-0037,True
+ACC-0038,"Baker, Mason and White Trust",Fund,USD,C-711878,PORT-0038,FND-0038,True
+ACC-0039,Harrell LLC Account,Endowment,USD,C-329974,PORT-0039,FND-0039,True
+ACC-0040,"Romero, Gonzalez and Brooks Trust",Institutional,USD,C-195325,PORT-0040,FND-0040,True
+ACC-0041,Ryan PLC Fund,Individual,USD,C-260265,PORT-0041,FND-0041,True
+ACC-0042,George Group Trust,Institutional,USD,C-725380,PORT-0042,FND-0042,True
+ACC-0043,Rodriguez LLC Trust,Individual,USD,C-500156,PORT-0043,FND-0043,True
+ACC-0044,Allen-Allen Trust,Fund,USD,C-654816,PORT-0044,FND-0044,True
+ACC-0045,"Arroyo, Miller and Tucker Fund",Trust,USD,C-813328,PORT-0045,FND-0045,True
+ACC-0046,Spence PLC Account,Individual,USD,C-905934,PORT-0046,FND-0046,True
+ACC-0047,Anderson Group Fund,Trust,USD,C-407757,PORT-0047,FND-0047,True
+ACC-0048,"Martin, Rose and Obrien Portfolio",Endowment,USD,C-575763,PORT-0048,FND-0048,True
+ACC-0049,Hickman Ltd Account,Individual,USD,C-624902,PORT-0049,FND-0049,True
+ACC-0050,"Harris, Collins and Carney Fund",Institutional,USD,C-755674,PORT-0050,FND-0050,True
+ACC-0051,"Brooks, Lam and Hayes Portfolio",Trust,USD,C-260263,PORT-0051,FND-0051,True
+ACC-0052,Walker LLC Portfolio,Trust,USD,C-665579,PORT-0052,FND-0052,True
+ACC-0053,Chapman and Sons Fund,Fund,USD,C-728038,PORT-0053,FND-0053,True
+ACC-0054,"Robinson, Jones and Welch Trust",Trust,USD,C-120422,PORT-0054,FND-0054,True
+ACC-0055,Jones Inc Account,Individual,USD,C-972064,PORT-0055,FND-0055,True
+ACC-0056,Jones-Young Portfolio,Trust,USD,C-160738,PORT-0056,FND-0056,True
+ACC-0057,"Washington, Ryan and Cummings Fund",Institutional,USD,C-189814,PORT-0057,FND-0057,True
+ACC-0058,"Johnston, Sanchez and Kennedy Fund",Endowment,USD,C-897549,PORT-0058,FND-0058,True
+ACC-0059,Lee-Davis Portfolio,Fund,USD,C-234628,PORT-0059,FND-0059,True
+ACC-0060,Gomez-Jenkins Portfolio,Endowment,USD,C-377932,PORT-0060,FND-0060,True
+ACC-0061,"Brown, Valdez and Lucas Trust",Fund,USD,C-322086,PORT-0061,FND-0061,True
+ACC-0062,Powell LLC Portfolio,Fund,USD,C-847581,PORT-0062,FND-0062,True
+ACC-0063,Wright and Sons Trust,Trust,USD,C-804314,PORT-0063,FND-0063,True
+ACC-0064,"West, Henderson and Ramirez Trust",Trust,USD,C-642717,PORT-0064,FND-0064,True
+ACC-0065,Baxter Inc Fund,Endowment,USD,C-359947,PORT-0065,FND-0065,True
+ACC-0066,Morton-Chase Fund,Institutional,USD,C-454508,PORT-0066,FND-0066,True
+ACC-0067,Williams PLC Portfolio,Individual,USD,C-717024,PORT-0067,FND-0067,True
+ACC-0068,Novak and Sons Fund,Institutional,USD,C-174441,PORT-0068,FND-0068,True
+ACC-0069,Russell Group Portfolio,Individual,USD,C-170674,PORT-0069,FND-0069,True
+ACC-0070,Hancock Inc Account,Individual,USD,C-174299,PORT-0070,FND-0070,True
+ACC-0071,Gray Group Portfolio,Fund,USD,C-392004,PORT-0071,FND-0071,True
+ACC-0072,House-Glover Portfolio,Endowment,USD,C-665427,PORT-0072,FND-0072,True
+ACC-0073,Henderson-Bernard Trust,Institutional,USD,C-354801,PORT-0073,FND-0073,True
+ACC-0074,"Stanley, Tucker and Lee Trust",Endowment,USD,C-299659,PORT-0074,FND-0074,True
+ACC-0075,Novak PLC Fund,Individual,USD,C-790993,PORT-0075,FND-0075,True
+ACC-0076,"Daniels, Adkins and Brown Account",Endowment,USD,C-544154,PORT-0076,FND-0076,True
+ACC-0077,"Woods, Calhoun and Schmidt Trust",Endowment,USD,C-864491,PORT-0077,FND-0077,True
+ACC-0078,Yu Inc Fund,Individual,USD,C-163556,PORT-0078,FND-0078,True
+ACC-0079,Jones Inc Account,Endowment,USD,C-939482,PORT-0079,FND-0079,True
+ACC-0080,"Hensley, Powell and David Portfolio",Individual,USD,C-300896,PORT-0080,FND-0080,True
+ACC-0081,"Sanchez, Wheeler and Harvey Trust",Institutional,USD,C-246991,PORT-0081,FND-0081,True
+ACC-0082,Sandoval-Cunningham Portfolio,Endowment,USD,C-392075,PORT-0082,FND-0082,True
+ACC-0083,Donovan-Harris Portfolio,Endowment,USD,C-179046,PORT-0083,FND-0083,True
+ACC-0084,"Edwards, Baker and Anderson Fund",Endowment,USD,C-153045,PORT-0084,FND-0084,True
+ACC-0085,"Evans, Stewart and Walton Fund",Fund,USD,C-197793,PORT-0085,FND-0085,True
+ACC-0086,Smith PLC Portfolio,Institutional,USD,C-526156,PORT-0086,FND-0086,True
+ACC-0087,"Ferrell, Jones and Lewis Trust",Endowment,USD,C-324130,PORT-0087,FND-0087,True
+ACC-0088,Anderson-Bailey Fund,Endowment,USD,C-272634,PORT-0088,FND-0088,True
+ACC-0089,Suarez LLC Fund,Endowment,USD,C-509386,PORT-0089,FND-0089,True
+ACC-0090,Moore-Bass Trust,Trust,USD,C-399105,PORT-0090,FND-0090,True
+ACC-0091,"Turner, Riggs and Roman Trust",Endowment,USD,C-262316,PORT-0091,FND-0091,True
+ACC-0092,"Smith, Montoya and Evans Account",Institutional,USD,C-328275,PORT-0092,FND-0092,True
+ACC-0093,"Garcia, Humphrey and Baker Fund",Individual,USD,C-884309,PORT-0093,FND-0093,True
+ACC-0094,Newton and Sons Fund,Trust,USD,C-152578,PORT-0094,FND-0094,True
+ACC-0095,Campbell-Clark Trust,Fund,USD,C-627276,PORT-0095,FND-0095,True
+ACC-0096,Harris-Walters Portfolio,Fund,USD,C-159642,PORT-0096,FND-0096,True
+ACC-0097,Wagner-King Fund,Fund,USD,C-992697,PORT-0097,FND-0097,True
+ACC-0098,Davis Group Fund,Institutional,USD,C-723939,PORT-0098,FND-0098,True
+ACC-0099,Williams-Cook Portfolio,Individual,USD,C-523389,PORT-0099,FND-0099,True
+ACC-0100,Walsh LLC Portfolio,Individual,USD,C-707040,PORT-0100,FND-0100,True

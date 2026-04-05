@@ -14,7 +14,7 @@
 -- no ambiguities: all FKs resolve, all 200 securities are mastered, unrealized
 -- G/L is computed for every row, and one price source is authoritative.
 --
--- The semantic model (semantic_model/positions.yaml) is staged to
+-- The semantic model (semantic_model/positions_gold.yaml) is staged to
 -- @GSF_GOLD_STAGE/semantic/ by load_gold.py and read by Cortex Analyst at
 -- query time. No CREATE SEMANTIC VIEW DDL is required for this demo.
 --
@@ -29,10 +29,10 @@ USE DATABASE GSF_DEMO;
 
 -- ── Internal stage ────────────────────────────────────────────────────────────
 -- Used for both CSV data loads and semantic model YAML staging.
--- Semantic model lives at @GSF_GOLD_STAGE/semantic/positions.yaml
+-- Semantic model lives at @GSF_GOLD_STAGE/semantic/positions_gold.yaml
 
 CREATE STAGE IF NOT EXISTS GOLD.GSF_GOLD_STAGE
-    COMMENT = 'Pipeline B Gold load stage. CSV data + semantic model YAML (semantic/positions.yaml).';
+    COMMENT = 'Pipeline B Gold load stage. CSV data + semantic model YAMLs (semantic/positions_gold.yaml etc).';
 
 
 -- ── DW_ACCOUNT — canonical account master ─────────────────────────────────────

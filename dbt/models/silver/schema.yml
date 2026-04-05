@@ -1,0 +1,90 @@
+version: 2
+
+models:
+  - name: positions_integrated
+    description: >
+      Naive integration of all three source systems (Topaz, Emerald, Ruby) into a
+      single positions table. Looks correct — same 15 columns, no obvious errors —
+      but intentionally embeds five ambiguities (A7–A11) that cause Cortex Analyst
+      to produce wrong answers. This is the design: the table is the demo's "before"
+      state, showing what happens when you integrate without semantic governance.
+    columns:
+      - name: record_id
+        description: >
+          Mixed-grain identifier. LOT-NNNNNNN for Topaz (lot-level), composite
+          POS-{portfolio}-{ticker} for Emerald, NAV-{fund}-{isin} for Ruby.
+          AMBIGUITY A7: grain is invisible from the column values alone.
+        tests: [not_null]
+      - name: source_system
+        description: Source system identifier (TOPAZ, EMERALD, or RUBY).
+        tests:
+          - not_null
+          - accepted_values:
+              values: [TOPAZ, EMERALD, RUBY]
+      - name: account_ref
+        description: >
+          Account identifier in source-system format. C-XXXXXX (Topaz), PORT-XXXX
+          (Emerald), FND-XXXX (Ruby). AMBIGUITY A3/A4: three formats for the same
+          account; no canonical account_id.
+        tests: [not_null]
+      - name: security_ref
+        description: >
+          Security identifier in source-system format. CUSIP (Topaz), ticker (Emerald),
+          ISIN (Ruby). AMBIGUITY A1: three identifier types; cross-source joins are unsafe.
+        tests: [not_null]
+      - name: security_ref_type
+        description: Type of security_ref (CUSIP, TICKER, or ISIN).
+        tests:
+          - not_null
+          - accepted_values:
+              values: [CUSIP, TICKER, ISIN]
+      - name: security_master_id
+        description: >
+          Canonical security ID from the stub master. NULL for ~15% of rows
+          (30 of 200 securities absent from BRONZE.SECURITY_MASTER_STUB).
+          AMBIGUITY A8: NULL rows are silently excluded from GROUP BY aggregations.
+      - name: position_date
+        description: >
+          Position date in source-system semantics. Settlement date (Topaz), trade
+          date (Emerald), NAV strike date (Ruby). AMBIGUITY A6: semantics differ
+          at period-end, producing different row counts for the same calendar date.
+        tests: [not_null]
+      - name: quantity
+        description: >
+          Shares/units held. Lot-level for Topaz (~2-3 lots per position on average),
+          position-level for Emerald and Ruby. AMBIGUITY A7: summing this column
+          across all sources inflates Fixed Income totals by ~2-3x.
+        tests: [not_null]
+      - name: price
+        description: >
+          Unit price. Custodian EOD for Topaz, PM evaluated ±0.3% for Emerald,
+          NAV per share ±0.5% for Ruby. AMBIGUITY A2: three price methodologies
+          coexist; blended totals are methodologically unsound.
+        tests: [not_null]
+      - name: market_value
+        description: >
+          Market value as reported by source. Computed from mixed grain × mixed price.
+          AMBIGUITY A2/A7: values are not comparable across sources.
+        tests: [not_null]
+      - name: cost_basis
+        description: >
+          Cost basis. Specific lot cost (Topaz), avg_cost × qty (Emerald), book cost
+          (Ruby). AMBIGUITY A9: three methods produce different values for the same
+          economic position; totals are not reconcilable.
+      - name: unrealized_gl
+        description: >
+          Unrealized gain/loss. Present for Topaz and Emerald rows; NULL for all
+          ~4,886 Ruby rows. AMBIGUITY A11: Ruby uses fund accounting with no G/L
+          concept. Filters on this column silently exclude 22% of rows.
+      - name: asset_class
+        description: >
+          Asset class from stub security master. NULL for ~15% of rows (unmastered
+          securities). AMBIGUITY A10: sleeve-level aggregations (Equity, Fixed Income)
+          exclude these rows from both numerator and denominator, making all % AUM
+          calculations systematically wrong.
+      - name: currency
+        description: ISO currency code.
+        tests: [not_null]
+      - name: etl_loaded_at
+        description: Fixed batch timestamp per source (06:00 Topaz, 08:00 Emerald, 10:00 Ruby).
+        tests: [not_null]

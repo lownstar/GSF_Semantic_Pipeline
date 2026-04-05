@@ -1,0 +1,143 @@
+version: 2
+
+models:
+  - name: dw_account
+    description: >
+      Canonical account dimension. 100 accounts with all three source-system keys
+      present on each row. Resolves A3/A4 (account ID fragmentation and format divergence).
+      Any cross-source account query can join to this table using the appropriate key.
+    columns:
+      - name: account_id
+        description: Canonical account identifier (ACC-XXXX). Primary key.
+        tests: [unique, not_null]
+      - name: custodian_account_num
+        description: Topaz source key (C-XXXXXX). Used to join Silver Topaz rows.
+        tests: [unique, not_null]
+      - name: portfolio_code
+        description: Emerald source key (PORT-XXXX). Used to join Silver Emerald rows.
+        tests: [unique, not_null]
+      - name: fund_code
+        description: Ruby source key (FND-XXXX). Used to join Silver Ruby rows.
+        tests: [unique, not_null]
+
+  - name: dw_security
+    description: >
+      Complete security master — all 200 securities. Unlike BRONZE.SECURITY_MASTER_STUB
+      (170 rows), no securities are missing. Resolves A1 (security ID fragmentation),
+      A8 (unmastered securities), and A10 (asset class gaps).
+    columns:
+      - name: security_id
+        description: Canonical security identifier (SEC-XXXX). Primary key.
+        tests: [unique, not_null]
+      - name: cusip
+        description: CUSIP identifier used by Topaz.
+        tests: [unique, not_null]
+      - name: isin
+        description: ISIN identifier used by Ruby.
+        tests: [unique, not_null]
+      - name: ticker
+        description: Ticker symbol used by Emerald.
+        tests: [unique, not_null]
+      - name: asset_class
+        description: Asset class (Equity, Fixed Income, Real Estate, Cash). No NULLs — resolves A10.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [Equity, Fixed Income, Real Estate, Cash]
+
+  - name: dw_position
+    description: >
+      Governed position fact table at position-level grain. One row per account ×
+      security × position_date × source_system. All ambiguities resolved:
+        A1  — security joined via canonical identifier per source
+        A2  — Topaz market_price is custodian EOD (authoritative)
+        A3/A4 — account joined via canonical account_id
+        A5/A7 — Topaz lots aggregated to position grain
+        A8  — all 200 securities present; no dropped rows
+        A9  — cost_basis method is explicit per source_system
+        A10 — asset_class available via dw_security join
+        A11 — unrealized_gain_loss computed for all rows including Ruby
+    columns:
+      - name: position_id
+        description: MD5 surrogate key (account_id | security_id | position_date | source_system).
+        tests: [unique, not_null]
+      - name: account_id
+        description: Canonical account identifier. Foreign key to dw_account.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dw_account')
+              field: account_id
+      - name: security_id
+        description: Canonical security identifier. Foreign key to dw_security.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dw_security')
+              field: security_id
+      - name: position_date
+        description: Position date (settlement for Topaz, trade date for Emerald, NAV date for Ruby).
+        tests: [not_null]
+      - name: quantity
+        description: >
+          Shares/units held at position grain. Topaz lots are summed per account × security.
+          Comparable to Emerald and Ruby position-level quantities. Resolves A7.
+        tests: [not_null]
+      - name: market_price
+        description: >
+          Unit price from the source system. For Topaz: custodian EOD (authoritative).
+          For Emerald: PM evaluated (±0.3%). For Ruby: NAV per share (±0.5%).
+          The semantic model directs price queries to Topaz rows only. Resolves A2.
+      - name: market_value
+        description: Market value as reported by the source system.
+      - name: cost_basis
+        description: >
+          Cost basis as reported by the source. Method varies by source_system:
+          specific lot (Topaz), avg cost × qty (Emerald), book cost (Ruby).
+          Use source_system filter to select the appropriate method. Resolves A9.
+      - name: unrealized_gain_loss
+        description: >
+          Unrealized gain/loss. Computed as market_value - cost_basis for Ruby rows
+          (where Silver had NULL). No NULLs in this column. Resolves A11.
+        tests: [not_null]
+      - name: source_system
+        description: Source system of record for this position row.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [TOPAZ, EMERALD, RUBY]
+
+  - name: dw_trade_lot
+    description: >
+      Lot-level detail scoped exclusively to Topaz (the custodian system).
+      Topaz is the only source that tracks individual acquisition lots.
+      Resolves A5/A7 by isolating lot grain to this table — position grain lives in dw_position.
+    columns:
+      - name: lot_id
+        description: Lot identifier from Topaz (LOT-NNNNNNN format). Primary key.
+        tests: [unique, not_null]
+      - name: account_id
+        description: Canonical account identifier. Foreign key to dw_account.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dw_account')
+              field: account_id
+      - name: security_id
+        description: Canonical security identifier. Foreign key to dw_security.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dw_security')
+              field: security_id
+      - name: remaining_quantity
+        description: Units remaining in this lot.
+        tests: [not_null]
+      - name: cost_basis
+        description: Specific lot acquisition cost (Topaz method).
+      - name: source_system
+        description: Always TOPAZ — lot-level data is exclusively from the custodian.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [TOPAZ]

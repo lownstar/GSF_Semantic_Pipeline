@@ -1,0 +1,41 @@
+version: 2
+
+seeds:
+  - name: account_master_full
+    description: >
+      Canonical account master — 100 accounts with all three source system keys
+      (custodian_account_num, portfolio_code, fund_code). Resolves ambiguities A3/A4.
+      Loaded to GOLD schema. Source: data/seed_v2/dw_account.csv.
+    columns:
+      - name: account_id
+        description: Canonical account identifier (ACC-XXXX). Primary key.
+        tests: [unique, not_null]
+      - name: custodian_account_num
+        description: Topaz source key (C-XXXXXX format).
+      - name: portfolio_code
+        description: Emerald source key (PORT-XXXX format).
+      - name: fund_code
+        description: Ruby source key (FND-XXXX format).
+
+  - name: security_master_full
+    description: >
+      Complete security master — all 200 securities with CUSIP, ISIN, and ticker.
+      Unlike BRONZE.SECURITY_MASTER_STUB (170 rows), this includes all 200 securities.
+      Resolves ambiguities A1, A8, A10. Loaded to GOLD schema.
+      Source: data/seed_v2/dw_security.csv.
+    columns:
+      - name: security_id
+        description: Canonical security identifier (SEC-XXXX). Primary key.
+        tests: [unique, not_null]
+      - name: cusip
+        description: CUSIP identifier — used by Topaz.
+        tests: [unique, not_null]
+      - name: isin
+        description: ISIN identifier — used by Ruby.
+        tests: [unique, not_null]
+      - name: ticker
+        description: Ticker symbol — used by Emerald.
+        tests: [unique, not_null]
+      - name: asset_class
+        description: Asset class (Equity, Fixed Income, Real Estate, Cash). No NULLs — resolves A10.
+        tests: [not_null]

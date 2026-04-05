@@ -1,0 +1,279 @@
+# =============================================================================
+# Gemstone Financial — Bronze Positions Model (RAW / FRAGMENTED)
+# =============================================================================
+# THIS IS THE RAWEST SEMANTIC MODEL — one per source system, no joins.
+#
+# Cortex Analyst can query individual source tables but cannot answer any
+# cross-source question correctly. Each table uses different:
+#   - Account identifiers  (ACCT_NUM vs PORTFOLIO_ID vs FUND_CODE)
+#   - Security identifiers (SEC_CUSIP vs SECURITY_TICKER vs ISIN_IDENTIFIER)
+#   - Column names         (UNITS vs QUANTITY vs SHARES_HELD)
+#   - Price columns        (MKT_PRC vs UNIT_PRICE vs NAV_PER_SHARE)
+#   - Date columns         (AS_OF_DT vs POSITION_DATE vs NAV_DATE)
+#
+# Result: narrow single-source answers at best; cross-source questions fail
+# or return nonsense. This is the baseline "before any integration" state.
+#
+# DEPLOYMENT
+# Staged to @GOLD.GSF_GOLD_STAGE/semantic/positions_bronze.yaml by load_gold.py.
+# =============================================================================
+
+name: gsf_positions_bronze_raw
+description: |
+  Raw, ungoverned position data from three independent source systems. Each table uses different column names, identifier types, and price methodologies. Cross-system aggregation is not possible without ambiguity. Use the governed Gold model (gsf_positions_semantic_model) for reliable analytics.
+tables:
+  - name: topaz_positions
+    description: |
+      Lot-level custody positions from Topaz. Uses CUSIP security identifiers and custodian account numbers. Custodian end-of-day pricing. Grain is lot-level (2-3 rows per position on average). No direct join to Emerald or Ruby without a security master.
+    base_table:
+      database: GSF_DEMO
+      schema: BRONZE
+      table: TOPAZ_POSITIONS
+    dimensions:
+      - name: acct_num
+        synonyms:
+          - account
+          - custodian account
+        description: Custodian account number (C-XXXXXX format). Not comparable to Emerald PORTFOLIO_ID or Ruby FUND_CODE.
+        expr: ACCT_NUM
+        data_type: TEXT
+        unique: false
+      - name: sec_cusip
+        synonyms:
+          - cusip
+          - security
+        description: CUSIP security identifier. Only resolvable against SECURITY_MASTER_STUB for 170 of 200 securities.
+        expr: SEC_CUSIP
+        data_type: TEXT
+        unique: false
+      - name: lot_id
+        synonyms:
+          - lot
+          - record id
+        description: Lot identifier (LOT-NNNNNNN). Grain is lot-level.
+        expr: LOT_ID
+        data_type: TEXT
+        unique: true
+      - name: ccy
+        synonyms:
+          - currency
+        description: Currency code.
+        expr: CCY
+        data_type: TEXT
+        unique: false
+    time_dimensions:
+      - name: as_of_dt
+        synonyms:
+          - date
+          - as of date
+          - settlement date
+        description: Custody settlement date. May differ from Emerald trade date or Ruby NAV date for the same economic position.
+        expr: AS_OF_DT
+        data_type: date
+    facts:
+      - name: units
+        synonyms:
+          - shares
+          - quantity
+        description: Units held at lot level. Sum across lots gives position total, but inflates vs Emerald/Ruby position-level counts.
+        expr: UNITS
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: mkt_prc
+        synonyms:
+          - price
+          - market price
+        description: Custodian EOD market price. Authoritative benchmark price.
+        expr: MKT_PRC
+        data_type: NUMBER
+        default_aggregation: avg
+      - name: mkt_val
+        synonyms:
+          - market value
+          - value
+        description: Market value (units × mkt_prc) at lot level.
+        expr: MKT_VAL
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: cost_basis
+        synonyms:
+          - cost
+          - book value
+        description: Specific lot acquisition cost.
+        expr: COST_BASIS
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: unrlzd_gl
+        synonyms:
+          - unrealized gain
+          - unrealized loss
+          - unrealized P&L
+        description: Unrealized gain/loss at lot level.
+        expr: UNRLZD_GL
+        data_type: NUMBER
+        default_aggregation: sum
+    primary_key:
+      columns:
+        - LOT_ID
+
+  - name: emerald_positions
+    description: |
+      Position-level portfolio management data from Emerald. Uses ticker security identifiers and portfolio codes. PM evaluated pricing (±0.3% vs custodian EOD). Position grain (one row per portfolio × security). No lot detail.
+    base_table:
+      database: GSF_DEMO
+      schema: BRONZE
+      table: EMERALD_POSITIONS
+    dimensions:
+      - name: portfolio_id
+        synonyms:
+          - account
+          - portfolio
+        description: Portfolio code (PORT-XXXX format). Not the same as Topaz ACCT_NUM or Ruby FUND_CODE.
+        expr: PORTFOLIO_ID
+        data_type: TEXT
+        unique: false
+      - name: security_ticker
+        synonyms:
+          - ticker
+          - security
+          - symbol
+        description: Ticker symbol. Not the same as Topaz CUSIP or Ruby ISIN.
+        expr: SECURITY_TICKER
+        data_type: TEXT
+        unique: false
+      - name: ccy
+        synonyms:
+          - currency
+        description: Currency code.
+        expr: CCY
+        data_type: TEXT
+        unique: false
+    time_dimensions:
+      - name: position_date
+        synonyms:
+          - date
+          - trade date
+        description: Trade date. May differ from Topaz settlement date or Ruby NAV date.
+        expr: POSITION_DATE
+        data_type: date
+    facts:
+      - name: quantity
+        synonyms:
+          - shares
+          - units
+        description: Shares held at position level.
+        expr: QUANTITY
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: unit_price
+        synonyms:
+          - price
+          - market price
+        description: PM evaluated price (custodian EOD ±0.3%). Not the same as Topaz MKT_PRC.
+        expr: UNIT_PRICE
+        data_type: NUMBER
+        default_aggregation: avg
+      - name: market_value
+        synonyms:
+          - market value
+          - value
+        description: Market value (quantity × unit_price).
+        expr: MARKET_VALUE
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: avg_cost_basis
+        synonyms:
+          - cost
+          - average cost
+        description: Average cost basis per unit. Multiply by quantity for total cost basis.
+        expr: AVG_COST_BASIS
+        data_type: NUMBER
+        default_aggregation: avg
+      - name: unrealized_pnl
+        synonyms:
+          - unrealized gain
+          - unrealized loss
+          - unrealized P&L
+        description: Unrealized profit and loss.
+        expr: UNREALIZED_PNL
+        data_type: NUMBER
+        default_aggregation: sum
+
+  - name: ruby_positions
+    description: |
+      Position-level fund accounting data from Ruby. Uses ISIN security identifiers and fund codes. NAV-based pricing (±0.5% vs custodian EOD). No unrealized gain/loss column — fund accounting tracks book cost only.
+    base_table:
+      database: GSF_DEMO
+      schema: BRONZE
+      table: RUBY_POSITIONS
+    dimensions:
+      - name: fund_code
+        synonyms:
+          - account
+          - fund
+        description: Fund code (FND-XXXX format). Not the same as Topaz ACCT_NUM or Emerald PORTFOLIO_ID.
+        expr: FUND_CODE
+        data_type: TEXT
+        unique: false
+      - name: isin_identifier
+        synonyms:
+          - isin
+          - security
+        description: ISIN security identifier. Not the same as Topaz CUSIP or Emerald ticker.
+        expr: ISIN_IDENTIFIER
+        data_type: TEXT
+        unique: false
+      - name: currency_code
+        synonyms:
+          - currency
+          - ccy
+        description: Currency code.
+        expr: CURRENCY_CODE
+        data_type: TEXT
+        unique: false
+    time_dimensions:
+      - name: nav_date
+        synonyms:
+          - date
+          - NAV date
+          - valuation date
+        description: NAV strike date. May differ from Topaz settlement date or Emerald trade date.
+        expr: NAV_DATE
+        data_type: date
+    facts:
+      - name: shares_held
+        synonyms:
+          - shares
+          - quantity
+          - units
+        description: Shares held at position level.
+        expr: SHARES_HELD
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: nav_per_share
+        synonyms:
+          - price
+          - NAV
+          - unit price
+        description: NAV price per share (custodian EOD ±0.5%). Not the same as Topaz MKT_PRC.
+        expr: NAV_PER_SHARE
+        data_type: NUMBER
+        default_aggregation: avg
+      - name: total_nav_value
+        synonyms:
+          - market value
+          - NAV value
+          - value
+        description: Total NAV value (shares_held × nav_per_share).
+        expr: TOTAL_NAV_VALUE
+        data_type: NUMBER
+        default_aggregation: sum
+      - name: book_cost
+        synonyms:
+          - cost basis
+          - book value
+          - cost
+        description: Book cost (total acquisition cost). Ruby tracks no unrealized G/L.
+        expr: BOOK_COST
+        data_type: NUMBER
+        default_aggregation: sum

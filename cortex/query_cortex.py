@@ -5,13 +5,17 @@ Sends a natural language question to Snowflake Cortex Analyst using the
 REST API with session token authentication. Prints the generated SQL and
 executes it against Snowflake to return the result set.
 
-Two models supported:
-  --model gold    uses semantic_model/positions.yaml (governed Gold environment)
-  --model silver  uses semantic_model/positions_silver.yaml (naive Silver environment)
+Four models supported:
+  --model gold        uses positions_gold.yaml (governed Semantic Gold)
+  --model gold_naive  uses positions_gold_naive.yaml (assumption-based Naive Gold)
+  --model silver      uses positions_silver.yaml (naive Silver)
+  --model bronze      uses positions_bronze.yaml (raw Bronze, fragmented)
 
 Usage:
   python cortex/query_cortex.py --model gold
+  python cortex/query_cortex.py --model gold_naive
   python cortex/query_cortex.py --model silver
+  python cortex/query_cortex.py --model bronze
   python cortex/query_cortex.py --model gold --question "What is total AUM?"
   python cortex/query_cortex.py --model gold --no-execute  # print SQL only
 
@@ -36,13 +40,25 @@ GATE_QUESTION = "What is the total market value of account ACC-0042?"
 STAGE_BASE = "@GSF_DEMO.GOLD.GSF_GOLD_STAGE/semantic"
 
 MODELS = {
-    "gold":   f"{STAGE_BASE}/positions.yaml",
-    "silver": f"{STAGE_BASE}/positions_silver.yaml",
+    "gold":       f"{STAGE_BASE}/positions_gold.yaml",
+    "gold_naive": f"{STAGE_BASE}/positions_gold_naive.yaml",
+    "silver":     f"{STAGE_BASE}/positions_silver.yaml",
+    "bronze":     f"{STAGE_BASE}/positions_bronze.yaml",
 }
 
 MODEL_LABELS = {
-    "gold":   "Gold (governed — positions.yaml)",
-    "silver": "Silver (naive — positions_silver.yaml)",
+    "gold":       "Semantic Gold (governed — positions_gold.yaml)",
+    "gold_naive": "Naive Gold (assumption-based — positions_gold_naive.yaml)",
+    "silver":     "Silver (naive — positions_silver.yaml)",
+    "bronze":     "Bronze (raw/fragmented — positions_bronze.yaml)",
+}
+
+# YAML filename for each model key (used by _ensure_staged)
+_MODEL_YAML = {
+    "gold":       "positions_gold.yaml",
+    "gold_naive": "positions_gold_naive.yaml",
+    "silver":     "positions_silver.yaml",
+    "bronze":     "positions_bronze.yaml",
 }
 
 
@@ -80,21 +96,22 @@ def _get_connection() -> snowflake.connector.SnowflakeConnection:
     return snowflake.connector.connect(**connect_kwargs)
 
 
-# ── Stage the Silver model if not already staged ──────────────────────────────
+# ── Stage semantic model YAMLs on demand ─────────────────────────────────────
 
-def _ensure_silver_staged(conn: snowflake.connector.SnowflakeConnection) -> None:
-    """PUT positions_silver.yaml to stage if not already there."""
+def _ensure_staged(model_key: str, conn: snowflake.connector.SnowflakeConnection) -> None:
+    """PUT the YAML for model_key to the stage if not already there."""
+    yaml_name = _MODEL_YAML[model_key]
     cur = conn.cursor()
     try:
         cur.execute("LIST @GSF_DEMO.GOLD.GSF_GOLD_STAGE/semantic/")
         staged = [row[0] for row in cur.fetchall()]
-        if not any("positions_silver.yaml" in f for f in staged):
+        if not any(yaml_name in f for f in staged):
             yaml_path = os.path.join(
                 os.path.dirname(os.path.dirname(__file__)),
-                "semantic_model", "positions_silver.yaml"
+                "semantic_model", yaml_name
             )
             abs_path = os.path.abspath(yaml_path).replace("\\", "/")
-            print("  Staging positions_silver.yaml...")
+            print(f"  Staging {yaml_name}...")
             cur.execute(
                 f"PUT 'file://{abs_path}' "
                 f"@GSF_DEMO.GOLD.GSF_GOLD_STAGE/semantic/ "
@@ -103,6 +120,11 @@ def _ensure_silver_staged(conn: snowflake.connector.SnowflakeConnection) -> None
             print("  Staged.")
     finally:
         cur.close()
+
+
+def _ensure_silver_staged(conn: snowflake.connector.SnowflakeConnection) -> None:
+    """Backwards-compatible alias for _ensure_staged('silver', conn)."""
+    _ensure_staged("silver", conn)
 
 
 # ── Cortex Analyst REST call ───────────────────────────────────────────────────
@@ -192,9 +214,8 @@ def run(question: str, model_key: str, execute: bool) -> None:
 
     conn = _get_connection()
 
-    # Ensure Silver model is staged (Gold is staged by load_gold.py)
-    if model_key == "silver":
-        _ensure_silver_staged(conn)
+    # Ensure the requested model's YAML is staged
+    _ensure_staged(model_key, conn)
 
     # Call Cortex Analyst
     print("  Calling Cortex Analyst API...")
@@ -236,9 +257,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--model",
-        choices=["gold", "silver"],
+        choices=["gold", "gold_naive", "silver", "bronze"],
         required=True,
-        help="Which semantic model to use: gold (governed) or silver (naive)",
+        help="Which semantic model to use: gold, gold_naive, silver, or bronze",
     )
     parser.add_argument(
         "--question",

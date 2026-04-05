@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: bronze
+    database: GSF_DEMO
+    schema: BRONZE
+    tables:
+      - name: topaz_positions
+        description: "Lot-level positions from Topaz (custodian). CUSIP identifiers, custodian EOD prices, lot grain."
+      - name: emerald_positions
+        description: "Position-level data from Emerald (portfolio management). Ticker identifiers, PM evaluated prices ±0.3%."
+      - name: ruby_positions
+        description: "Position-level data from Ruby (fund accounting). ISIN identifiers, NAV prices ±0.5%. No unrealized G/L column."
+      - name: security_master_stub
+        description: "Intentionally incomplete security master — 170 of 200 securities. Missing 30 securities simulate A8/A10 ambiguities."

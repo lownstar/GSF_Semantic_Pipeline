@@ -168,11 +168,13 @@ gsf-semantic-pipeline/
 │   ├── snowflake_setup.sql # Database, schemas, warehouse, role
 │   ├── cortex_setup.sql    # Cortex grants, Horizon governance tags
 │   └── s3_external_stage.sql # S3 storage integration + external stage
-├── semantic_model/         # Cortex Analyst YAML files
-│   ├── positions.yaml      # Gold — governed, resolves A1-A11
-│   └── positions_silver.yaml  # Silver — naive, no disambiguation
+├── semantic_model/         # Cortex Analyst YAML files (one per tier)
+│   ├── positions_bronze.yaml      # Bronze — raw, fragmented
+│   ├── positions_silver.yaml      # Silver — naive, A7-A11 embedded
+│   ├── positions_gold_naive.yaml  # Naive Gold — assumption-based
+│   └── positions_gold.yaml        # Semantic Gold — governed, resolves A1-A11
 ├── cortex/                 # Phase 6: Cortex Analyst query runner
-│   └── query_cortex.py     # REST API; --model gold|silver
+│   └── query_cortex.py     # REST API; --model gold|gold_naive|silver|bronze
 ├── variance/               # Phase 7: Variance comparison
 │   ├── questions.py        # 11-question bank (one per ambiguity A1-A11)
 │   ├── ground_truth.py     # Ground truth from seed CSVs (no Snowflake)

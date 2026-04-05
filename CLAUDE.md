@@ -4,10 +4,13 @@ Portfolio demo proving the semantic layer is a **bias control mechanism** for AI
 results. Three synthetic legacy source systems (Topaz, Emerald, Ruby) produce position data
 with different schemas. Two pipelines process the same data through seven lifecycle phases:
 
-- **Naive Pipeline:** Bronze → Silver → Gold (assumption-based transforms, semantically broken)
-- **Semantic Enriched Pipeline:** Bronze → Silver → Gold (semantic-layer-guided, correct)
+Four-tier comparison: **Bronze → Silver → Naive Gold → Semantic Gold**
 
-Cortex Analyst queries both. Wrong answers vs correct answers. Streamlit shows the difference.
+Cortex Analyst queries all four tiers. The semantic model is what separates correct answers
+from confident wrong answers — even at the Gold layer.
+
+**The narrative:** *"Your org already has a dbt pipeline producing a Gold layer. Here's why
+Cortex still gets it wrong — and what the semantic model adds."*
 
 **GitHub:** https://github.com/lownstar/GSF_Semantci_Pipeline
 
@@ -17,7 +20,7 @@ Cortex Analyst queries both. Wrong answers vs correct answers. Streamlit shows t
 
 - All Snowflake objects use the `GSF` (Gemstone Financial) prefix
 - Database: `GSF_DEMO` | Warehouse: `GSF_WH` | Role: `GSF_ROLE`
-- Schemas: `BRONZE`, `SILVER`, `GOLD` (active), `GOLD_NAIVE` (planned — Step 5)
+- Schemas: `BRONZE`, `SILVER`, `GOLD`, `GOLD_NAIVE` (all active)
 - Generator is deterministic (seed=42); ground truth always from `data/seed_v2/` CSVs
 
 ---
@@ -28,10 +31,11 @@ Cortex Analyst queries both. Wrong answers vs correct answers. Streamlit shows t
 |---|---|---|
 | `generator_v2/` | 1 | Deterministic seed data generator (9 CSVs, seed=42) |
 | `delivery/` | 2 | S3 delivery module — boto3 upload to landing zone |
-| `pipeline_naive/` | 3-4 | Naive Pipeline: Bronze ingest + Silver ETL scripts |
-| `pipeline_semantic/` | 5 | Semantic Enriched Pipeline: Gold DW + semantic model |
+| `pipeline_naive/` | 3 | Bronze ingest (load_bronze.py — PUT/COPY only) |
+| `pipeline_semantic/` | 5 | YAML staging only (load_gold.py — dbt owns table population) |
+| `dbt/` | 4-5 | dbt project — Silver, Naive Gold, Semantic Gold transforms |
 | `infrastructure/` | 0 | One-time Snowflake + S3 setup SQL (run as ACCOUNTADMIN) |
-| `semantic_model/` | 5-6 | Cortex Analyst YAML files (positions.yaml + positions_silver.yaml) |
+| `semantic_model/` | 5-6 | Cortex Analyst YAMLs (all 4 tiers: bronze, silver, naive, gold) |
 | `cortex/` | 6 | Cortex Analyst REST API caller |
 | `variance/` | 7 | 11-question variance comparison (questions, ground truth, runner) |
 | `app/` | 7 | Streamlit visualization |
@@ -45,12 +49,9 @@ Cortex Analyst queries both. Wrong answers vs correct answers. Streamlit shows t
 | 1 | V1 cleanup + pipeline rename | Done |
 | 2 | Extract infrastructure SQL + refactor docs | Done |
 | 3 | S3 delivery layer | Done |
-| 4 | dbt integration (Silver + Gold models) | Next |
-| 5 | Naive Gold layer (GOLD_NAIVE schema) | Planned |
-| 6 | Separate semantic model staging | Planned |
-| 7 | Unified orchestrator (run_pipeline.py) | Planned |
-| 8 | Enhanced multi-page Streamlit app | Planned |
-| 9 | Documentation polish | Planned |
+| 4 | dbt integration — four-tier comparison (Bronze/Silver/Naive Gold/Semantic Gold) | Done |
+| 5 | Unified orchestrator (run_pipeline.py) | Next |
+| 6 | Documentation polish | Planned |
 
 ---
 
@@ -80,10 +81,13 @@ python delivery/deliver.py
 python pipeline_naive/load_bronze.py              # local
 python pipeline_naive/load_bronze.py --source s3  # from S3
 
-# Phase 4: Run Silver ETL (Snowflake worksheet)
-# snowsql -f pipeline_naive/etl_silver.sql
+# Phase 4: dbt transforms (Silver → Naive Gold + Semantic Gold)
+cd dbt && dbt seed          # loads canonical reference data to GOLD schema
+dbt run                     # builds SILVER, GOLD_NAIVE, GOLD
+dbt test                    # validates schema contracts
+cd ..
 
-# Phase 5: Load Gold
+# Phase 5: Stage Cortex Analyst semantic model YAMLs
 python pipeline_semantic/load_gold.py
 
 # Phase 6-7: Variance + visualization
