@@ -1,6 +1,6 @@
 """
-Pipeline B — Gold Loader
-========================
+Semantic Enriched Pipeline — Gold Loader
+=========================================
 Stages all four DW seed CSVs from data/seed_v2/ into Snowflake and
 COPY INTOs the corresponding Gold tables:
 
@@ -17,11 +17,11 @@ Load order: DW_ACCOUNT and DW_SECURITY first (FK parents), then DW_POSITION
 and DW_TRADE_LOT (FK children).
 
 Prerequisites:
-  1. Run pipeline_b/setup_gold.sql in Snowflake
+  1. Run pipeline_semantic/setup_gold.sql in Snowflake
   2. Copy .env.example to .env and fill in your credentials
 
 Usage:
-  python pipeline_b/load_gold.py [--data-dir data/seed_v2] [--semantic-dir semantic_model]
+  python pipeline_semantic/load_gold.py [--data-dir data/seed_v2] [--semantic-dir semantic_model]
 """
 
 import argparse
@@ -159,7 +159,7 @@ def verify_counts(cur: snowflake.connector.cursor.SnowflakeCursor) -> bool:
 
 
 def run(data_dir: str, semantic_dir: str) -> None:
-    print(f"\nPipeline B — Gold Load")
+    print(f"\nSemantic Enriched Pipeline — Gold Load")
     print(f"Data directory:     {data_dir}")
     print(f"Semantic directory: {semantic_dir}\n")
 
@@ -203,7 +203,7 @@ def run(data_dir: str, semantic_dir: str) -> None:
         if staged_any:
             print("\nSemantic models staged.")
 
-        print("\nPipeline B — Gold load complete.")
+        print("\nSemantic Enriched Pipeline — Gold load complete.")
 
     finally:
         cur.close()

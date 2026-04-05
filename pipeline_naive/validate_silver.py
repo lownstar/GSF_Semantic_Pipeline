@@ -1,6 +1,6 @@
 """
-Pipeline A — Silver Validator
-==============================
+Naive Pipeline — Silver Validator
+==================================
 Compares SILVER.POSITIONS_INTEGRATED in Snowflake against the reference CSV
 (data/seed_v2/positions_integrated.csv) to confirm the ETL produced the
 expected output.
@@ -17,7 +17,7 @@ Checks:
   SC9  Ruby record_ids are all NAV-* prefixed
 
 Usage:
-  python pipeline_a/validate_silver.py [--data-dir data/seed_v2]
+  python pipeline_naive/validate_silver.py [--data-dir data/seed_v2]
 """
 
 import argparse
@@ -75,7 +75,7 @@ def run(data_dir: str) -> None:
         print("  Run: python -m generator_v2.generator")
         sys.exit(1)
 
-    print(f"\nPipeline A — Silver Validation")
+    print(f"\nNaive Pipeline — Silver Validation")
     print(f"Reference: {ref_path}")
     print(f"Target:    SILVER.POSITIONS_INTEGRATED\n")
 

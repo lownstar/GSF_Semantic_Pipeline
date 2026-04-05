@@ -76,7 +76,7 @@ CREATE TAG IF NOT EXISTS GSF_DEMO.GOLD.PII_CLASSIFICATION
     COMMENT = 'PII classification simulation — tags account identifiers in GOLD layer for Horizon governance demo';
 
 -- ── Grant tag application privileges to GSF_ROLE ─────────────────────────────
--- Required so that pipeline_b/apply_horizon_tags.sql can SET TAG on columns
+-- Required so that pipeline_semantic/apply_horizon_tags.sql can SET TAG on columns
 -- using GSF_ROLE (rather than requiring ACCOUNTADMIN for every tag operation).
 
 GRANT APPLY ON TAG GSF_DEMO.GOLD.FINANCIAL_SENSITIVITY TO ROLE GSF_ROLE;
@@ -93,7 +93,7 @@ GRANT APPLY ON TAG GSF_DEMO.GOLD.PII_CLASSIFICATION     TO ROLE GSF_ROLE;
 GRANT CREATE SEMANTIC VIEW ON SCHEMA GSF_DEMO.GOLD TO ROLE GSF_ROLE;
 
 -- Also grant SELECT on semantic views to GSF_ROLE (needed to query via Cortex Analyst)
--- This is a future grant so it covers the view once created by pipeline_b.
+-- This is a future grant so it covers the view once created by pipeline_semantic.
 GRANT SELECT ON FUTURE SEMANTIC VIEWS IN SCHEMA GSF_DEMO.GOLD TO ROLE GSF_ROLE;
 
 

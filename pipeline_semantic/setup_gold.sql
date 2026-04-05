@@ -18,7 +18,7 @@
 -- @GSF_GOLD_STAGE/semantic/ by load_gold.py and read by Cortex Analyst at
 -- query time. No CREATE SEMANTIC VIEW DDL is required for this demo.
 --
--- Prerequisites: pipeline_a/setup.sql (creates GSF_DEMO, GSF_WH, GSF_ROLE)
+-- Prerequisites: infrastructure/snowflake_setup.sql (creates GSF_DEMO, GSF_WH, GSF_ROLE)
 -- Idempotent: CREATE OR REPLACE throughout.
 -- =============================================================================
 

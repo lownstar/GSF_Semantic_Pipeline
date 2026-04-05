@@ -1,6 +1,6 @@
 """
-Pipeline B — Gold Validator
-============================
+Semantic Enriched Pipeline — Gold Validator
+============================================
 Validates the GOLD DW tables in Snowflake against expected row counts,
 FK integrity, and NULL constraints. Confirms the governed environment is
 clean — no ambiguities, no orphaned rows, no missing classifications.
@@ -20,7 +20,7 @@ Checks:
   GC12  Semantic model staged at @GSF_GOLD_STAGE/semantic/positions.yaml
 
 Usage:
-  python pipeline_b/validate_gold.py
+  python pipeline_semantic/validate_gold.py
 """
 
 import os
@@ -83,7 +83,7 @@ def fetch_scalar(cur, sql: str):
 
 
 def run() -> None:
-    print("\nPipeline B — Gold Validation")
+    print("\nSemantic Enriched Pipeline — Gold Validation")
     print("Target: GOLD.DW_ACCOUNT / DW_SECURITY / DW_POSITION / DW_TRADE_LOT\n")
 
     conn = get_connection()

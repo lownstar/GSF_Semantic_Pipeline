@@ -14,7 +14,7 @@ Generates nine CSV files in data/seed_v2/:
     positions_emerald.csv      — position-level, ticker, portfolioId, PM evaluated price
     positions_ruby.csv         — position-level, ISIN, fund_code, NAV price
 
-  Pipeline A artifacts:
+  Naive Pipeline artifacts:
     security_master_stub.csv   — 170 mastered securities for ETL LEFT JOIN (30 absent → A8/A10 NULLs)
     positions_integrated.csv   — union of all three sources, A7–A11 ambiguities
 
@@ -295,7 +295,7 @@ def run(output_dir: str, run_validate: bool) -> None:
     emerald = generate_emerald_positions(dw_position, dw_account, dw_security)
     ruby    = generate_ruby_positions(dw_position, dw_account, dw_security)
 
-    print("Building Pipeline A artifacts...")
+    print("Building Naive Pipeline artifacts...")
     stub       = generate_security_master_stub(dw_security)
     integrated = generate_integrated_positions(dw_trade_lot, dw_position, dw_account, dw_security)
 

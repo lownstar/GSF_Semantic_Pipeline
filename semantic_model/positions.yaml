@@ -126,7 +126,7 @@ tables:
         - ACCOUNT_ID
   - name: security
     description: |
-      A financial instrument held across Gemstone Financial accounts. Each security has three identifiers used by different source systems: a CUSIP (used by Topaz), an ISIN (used by Ruby), and a proprietary ticker (used by Emerald). This table is the complete security master — all 200 securities are present, unlike the partial stub used in Pipeline A which had 30 missing entries.
+      A financial instrument held across Gemstone Financial accounts. Each security has three identifiers used by different source systems: a CUSIP (used by Topaz), an ISIN (used by Ruby), and a proprietary ticker (used by Emerald). This table is the complete security master — all 200 securities are present, unlike the partial stub used in the Naive Pipeline which had 30 missing entries.
     base_table:
       database: GSF_DEMO
       schema: GOLD
@@ -139,7 +139,7 @@ tables:
           - sector
           - sleeve
         description: |
-          Asset class classification (e.g., Equity, Fixed Income, Alternatives, Real Estate, Commodities). Resolves A10: always populated for all 200 securities — unlike Pipeline A Silver where ~15% of rows had NULL asset_class due to unmastered securities.
+          Asset class classification (e.g., Equity, Fixed Income, Alternatives, Real Estate, Commodities). Resolves A10: always populated for all 200 securities — unlike the Naive Pipeline Silver where ~15% of rows had NULL asset_class due to unmastered securities.
         expr: asset_class
         data_type: TEXT
         unique: false
@@ -330,7 +330,7 @@ tables:
           - unrealizedPnL
           - UNRLZD_GL
         description: |
-          Unrealized gain/loss = market_value − cost_basis, computed at the canonical DW grain. Resolves A11: populated for ALL positions regardless of source system — Ruby positions have a calculated G/L here, unlike Pipeline A Silver where all Ruby rows had NULL unrealized_gl (22% silent exclusion).
+          Unrealized gain/loss = market_value − cost_basis, computed at the canonical DW grain. Resolves A11: populated for ALL positions regardless of source system — Ruby positions have a calculated G/L here, unlike the Naive Pipeline Silver where all Ruby rows had NULL unrealized_gl (22% silent exclusion).
         expr: unrealized_gain_loss
         data_type: NUMBER
         default_aggregation: sum

@@ -307,7 +307,7 @@ but has no entry in the master. These rows have:
 - `security_master_id`: NULL (join failed)
 - `asset_class`: NULL (cannot be populated without a master record)
 
-These securities are fully mastered in `DW_SECURITY` (Env B). The gap is Pipeline A's
+These securities are fully mastered in `DW_SECURITY` (Env B). The gap is the Naive Pipeline's
 failure, not a fundamental data quality issue.
 
 **Why it causes silent exclusion:**
@@ -453,14 +453,14 @@ the figure.
 
 ## Usage in Downstream Epics
 
-**Epic 2 (Pipeline A):**
-The naive integration table (`POSITIONS_INTEGRATED`) is the primary Pipeline A demo
+**Epic 2 (the Naive Pipeline):**
+The naive integration table (`POSITIONS_INTEGRATED`) is the primary the Naive Pipeline demo
 artifact. The three raw source tables (`TOPAZ_POSITIONS`, `EMERALD_POSITIONS`,
 `RUBY_POSITIONS`) serve as the pre-integration staging state for the three-act demo
 narrative. Ambiguities A1–A6 are visible in the raw tables; A7–A11 are the more
 insidious failures hidden in the integrated table.
 
-**Epic 3 (Pipeline B / Semantic Model):**
+**Epic 3 (Semantic Enriched Pipeline / Semantic Model):**
 Each ambiguity maps to one or more metric/dimension definitions in `semantic_model/positions.yaml`.
 The YAML should reference this registry explicitly in its comments (e.g., `# resolves A1`).
 

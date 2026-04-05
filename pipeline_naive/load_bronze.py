@@ -1,6 +1,6 @@
 """
-Pipeline A — Bronze Loader
-==========================
+Naive Pipeline — Bronze Loader
+===============================
 Stages all four Bronze CSVs from data/seed_v2/ into Snowflake and
 COPY INTOs the corresponding Bronze tables:
 
@@ -10,12 +10,12 @@ COPY INTOs the corresponding Bronze tables:
   BRONZE.SECURITY_MASTER_STUB  <- security_master_stub.csv  (  170 rows)
 
 Prerequisites:
-  1. Run pipeline_a/setup.sql in Snowflake
-  2. Run pipeline_a/ddl_bronze.sql in Snowflake
+  1. Run infrastructure/snowflake_setup.sql in Snowflake
+  2. Run pipeline_naive/ddl_bronze.sql in Snowflake
   3. Copy .env.example to .env and fill in your credentials
 
 Usage:
-  python pipeline_a/load_bronze.py [--data-dir data/seed_v2]
+  python pipeline_naive/load_bronze.py [--data-dir data/seed_v2]
 """
 
 import argparse
@@ -136,7 +136,7 @@ def verify_counts(cur: snowflake.connector.cursor.SnowflakeCursor) -> bool:
 
 
 def run(data_dir: str) -> None:
-    print(f"\nPipeline A — Bronze Load\nData directory: {data_dir}\n")
+    print(f"\nNaive Pipeline — Bronze Load\nData directory: {data_dir}\n")
 
     conn = get_connection()
     cur  = conn.cursor()
@@ -148,7 +148,7 @@ def run(data_dir: str) -> None:
 
         # Create a single internal stage for Bronze loads
         stage_name = "BRONZE.GSF_BRONZE_STAGE"
-        cur.execute(f"CREATE STAGE IF NOT EXISTS {stage_name} COMMENT = 'Pipeline A Bronze load stage'")
+        cur.execute(f"CREATE STAGE IF NOT EXISTS {stage_name} COMMENT = 'Naive Pipeline Bronze load stage'")
         print(f"Stage: {stage_name}")
 
         total_loaded = 0

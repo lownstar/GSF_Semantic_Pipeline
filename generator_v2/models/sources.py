@@ -246,12 +246,12 @@ def generate_ruby_positions(
     return pd.DataFrame(rows)
 
 
-# ── Naive Integration Table (Pipeline A — Ambiguities A7–A11) ─────────────────
+# ── Naive Integration Table (Naive Pipeline — Ambiguities A7–A11) ─────────────────
 
 def _get_unmastered_ids(dw_security: pd.DataFrame) -> set:
     """
     Deterministically select the ~15% of securities that are 'unmastered' in the
-    naive Pipeline A environment. Uses a fixed seed offset so the same set is
+    naive Naive Pipeline environment. Uses a fixed seed offset so the same set is
     returned regardless of call order. Both generate_integrated_positions() and
     generate_security_master_stub() must call this to stay in sync.
     """
@@ -263,7 +263,7 @@ def _get_unmastered_ids(dw_security: pd.DataFrame) -> set:
 
 def generate_security_master_stub(dw_security: pd.DataFrame) -> pd.DataFrame:
     """
-    Stub security master for Pipeline A's ETL LEFT JOIN.
+    Stub security master for Naive Pipeline's ETL LEFT JOIN.
 
     Contains only the ~170 mastered securities (the ~30 unmastered ones are
     absent — not NULL-filled). When the ETL LEFT JOINs on this table, the
@@ -290,7 +290,7 @@ def generate_integrated_positions(
     """
     Naive ETL integration of all three gemstone source systems into one table.
 
-    This is Pipeline A's primary artifact: a single POSITIONS_INTEGRATED table
+    This is Naive Pipeline's primary artifact: a single POSITIONS_INTEGRATED table
     that looks normalized (consistent column names, one row per record) but
     buries all six original ambiguities (A1–A6) and introduces five new ones:
 

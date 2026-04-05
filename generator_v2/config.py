@@ -92,14 +92,14 @@ TOPAZ_FILE   = "positions_topaz.csv"
 EMERALD_FILE = "positions_emerald.csv"
 RUBY_FILE    = "positions_ruby.csv"
 
-# ── Naive integration table (Pipeline A — Ambiguities A7–A11) ─────────────────
+# ── Naive integration table (Naive Pipeline — Ambiguities A7–A11) ─────────────
 # A single table produced by a naive ETL that unions all three sources with
 # normalized column names. Looks clean; semantically broken.
 # See docs/ambiguity_registry_v2.md for the full A7–A11 documentation.
 
 INTEGRATED_FILE = "positions_integrated.csv"
 
-# Stub security master for Pipeline A ETL — contains only the mastered
+# Stub security master for Naive Pipeline ETL — contains only the mastered
 # securities. The ETL LEFT JOINs on this, producing NULLs for the ~15%
 # that are absent (Ambiguities A8 / A10).
 SECURITY_MASTER_STUB_FILE = "security_master_stub.csv"
