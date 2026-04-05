@@ -5,19 +5,23 @@
 ```
 Phase 1          Phase 2          Phase 3          Phase 4          Phase 5           Phase 6          Phase 7
 GENERATION  -->  DELIVERY    -->  BRONZE      -->  SILVER      -->  GOLD         -->  AI QUERY    -->  ANALYSIS
-generator_v2     boto3 -> S3      COPY INTO        SQL ETL          DW tables         Cortex           Streamlit
-9 CSVs           landing zone     raw tables       naive union      + semantic YAML   Analyst          variance
-                                                   (dbt planned)    (dbt planned)                      scorecard
+generator_v2     boto3 -> S3      COPY INTO        dbt run          dbt run           Cortex           Streamlit
+9 CSVs           landing zone     raw tables       naive union      DW tables         Analyst          variance
+                                                   (dbt Silver)     + semantic YAML   (4 tiers)        scorecard
 ```
 
 Phases 1-4 are shared by both pipelines. Phase 5 is where they diverge:
 
-- **Naive Pipeline** builds Gold using assumption-based transforms — looks like a star
-  schema but carries Silver-layer integrity problems forward (A1-A11 unresolved)
-- **Semantic Enriched Pipeline** builds Gold guided by the semantic model — structurally
-  and semantically correct
+- **Naive Pipeline** builds `GOLD_NAIVE` using assumption-based dbt transforms — looks
+  like a star schema but carries Silver-layer integrity problems forward (A1-A11 unresolved)
+- **Semantic Enriched Pipeline** builds `GOLD` guided by the semantic model — structurally
+  and semantically correct, resolves all 11 ambiguities
 
 The core argument: without semantic governance, you cannot trust *any* layer, not even Gold.
+
+**Four-tier comparison:** Bronze → Silver → Naive Gold → Semantic Gold. Cortex Analyst
+queries all four. The Naive Gold tier isolates the semantic model as the key variable —
+it shows that a well-structured dbt Gold layer is still not enough without governance.
 
 ---
 
@@ -87,7 +91,7 @@ LEGACY SOURCE SYSTEMS (3 synthetic feeds, different schemas)
 | Schema | `GSF_DEMO.BRONZE` | Active | Raw source tables (3 feeds + security stub) |
 | Schema | `GSF_DEMO.SILVER` | Active | Naive ETL output (POSITIONS_INTEGRATED) |
 | Schema | `GSF_DEMO.GOLD` | Active | Governed DW tables + semantic model |
-| Schema | `GSF_DEMO.GOLD_NAIVE` | Planned (Step 5) | Assumption-based DW tables |
+| Schema | `GSF_DEMO.GOLD_NAIVE` | Active | Assumption-based DW tables (dbt gold_naive models) |
 | Stage | `@BRONZE.GSF_BRONZE_STAGE` | Active | Internal stage for local Bronze CSV loads |
 | Stage | `@BRONZE.GSF_S3_LANDING` | Planned (Step 3 SQL) | External stage for S3 loads |
 | Stage | `@GOLD.GSF_GOLD_STAGE` | Active | Internal stage for Gold loads + semantic YAMLs |

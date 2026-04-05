@@ -92,3 +92,61 @@ never from Snowflake queries.
 **Why:** Ensures objectivity. If Snowflake has a bug or the ETL changes, ground truth
 remains stable. The comparison is always: "what did Cortex return vs what the data
 actually says."
+
+---
+
+## dbt as the Transformation Layer
+
+**Decision:** Use dbt for all Bronze → Silver → Gold transforms, replacing the hand-rolled
+`etl_silver.sql` and `setup_gold.sql` scripts.
+
+**Why (portfolio rationale):** Most enterprises that have a Gold layer already built it with
+dbt. This demo can then argue: "you have dbt Gold, yet Cortex still gets it wrong — because
+the semantic model is what you're missing." dbt also provides built-in schema tests (replacing
+`validate_silver.py` and `validate_gold.py`), a generated DAG for documentation, and a
+standard pattern that any data engineer will recognize.
+
+**What dbt owns:** Bronze → Silver transform, Silver → GOLD_NAIVE, Silver → GOLD transforms,
+schema tests. **What Python still owns:** PUT/COPY file operations to Bronze (dbt cannot do
+this), YAML staging to Snowflake stage, Cortex REST API calls, variance scoring.
+
+---
+
+## Four-Tier Comparison (Bronze / Silver / Naive Gold / Semantic Gold)
+
+**Decision:** Extend the comparison from two tiers (Silver vs Gold) to four, adding Bronze
+and Naive Gold.
+
+**Why:** The original two-tier comparison conflated two variables: data quality (Silver had
+known gaps) and semantic model richness (Gold had the governed YAML). A hiring manager could
+reasonably conclude "better data = better AI" without crediting the semantic model. The four-tier
+design isolates the variable:
+
+- Bronze shows Cortex struggling with raw fragmented schemas
+- Silver shows improvement from integration, but ambiguities embedded
+- Naive Gold uses a proper dbt star schema — and still gets wrong answers
+- Semantic Gold resolves all 11 ambiguities — correct answers
+
+Naive Gold is the key tier: it proves that a structurally clean Gold layer is insufficient
+without semantic governance.
+
+---
+
+## Semantic Model YAML Naming: `positions_{layer}.yaml`
+
+**Decision:** Use `positions_{layer}.yaml` naming across all four tiers:
+`positions_bronze.yaml`, `positions_silver.yaml`, `positions_gold_naive.yaml`, `positions_gold.yaml`.
+
+**Why:** The `positions.yaml` / `positions_naive.yaml` original names broke the convention and
+required reading file content to know which tier a YAML targeted. The layer-suffixed names are
+self-documenting in a directory listing — important when hiring managers browse the repo.
+
+---
+
+## Surrogate Key: Native MD5 (not dbt_utils)
+
+**Decision:** Use `MD5(CONCAT(...))` in `dw_position.sql` instead of `dbt_utils.generate_surrogate_key`.
+
+**Why:** Avoids adding the `dbt-utils` package as a dependency for a single function call.
+`MD5(CONCAT(account_id, '|', security_id, '|', position_date::VARCHAR, '|', source_system))`
+is equivalent for this use case and keeps the project dependency-light.

@@ -62,6 +62,11 @@ AWS_REGION=us-east-1
 
 Or configure `~/.aws/credentials` — boto3 reads it automatically.
 
+### dbt Profile
+
+`dbt/profiles.yml` reads Snowflake credentials from the same `.env` vars as the Python
+scripts. No separate dbt configuration is needed beyond the `.env` file.
+
 ---
 
 ## Step 0 — One-time Snowflake Infrastructure (ACCOUNTADMIN required)
@@ -70,7 +75,7 @@ Run once per Snowflake account. Must be done before any pipeline steps.
 
 ```sql
 -- Step 0a: Core infrastructure
--- Creates GSF_DEMO database, BRONZE/SILVER/GOLD schemas, GSF_WH, GSF_ROLE
+-- Creates GSF_DEMO database, BRONZE/SILVER/GOLD/GOLD_NAIVE schemas, GSF_WH, GSF_ROLE
 -- Paste infrastructure/snowflake_setup.sql into a Snowflake worksheet
 
 -- Step 0b: Cortex + Horizon setup
@@ -82,7 +87,7 @@ Verify Cortex setup: `ENABLE_CORTEX_ANALYST = true`, Cortex roles granted, tags 
 
 ### Optional: S3 External Stage (ACCOUNTADMIN required)
 
-Only needed if using `--source s3` with `load_bronze.py`.
+Only needed if using `--source s3` with `load_bronze.py` or `run_pipeline.py`.
 
 ```sql
 -- Paste infrastructure/s3_external_stage.sql into a Snowflake worksheet
@@ -96,7 +101,39 @@ IAM policy reference.
 
 ---
 
-## Step 1 — Phase 1: Generate Seed Data
+## Running the Pipeline
+
+### Quickstart (orchestrator)
+
+The easiest way to run the full pipeline is with the unified orchestrator:
+
+```bash
+# Default: phases 1, 3, 4, 5, 6 (local Bronze source)
+python run_pipeline.py
+
+# Skip generation if seed data already exists
+python run_pipeline.py --phases 3 4 5 6
+
+# Load Bronze from S3 (requires Phase 2 / AWS credentials)
+python run_pipeline.py --phases 1 2 3 4 5 6 --source s3
+
+# Validate ground truth only (no Snowflake calls)
+python run_pipeline.py --phases 6 --dry-run
+
+# Full run including Streamlit launch
+python run_pipeline.py --launch-app
+```
+
+The orchestrator runs phases in ascending order, performs pre-flight checks, and aborts
+with a clear message on any failure.
+
+---
+
+## Manual Phase Reference
+
+Use these commands when re-running individual phases or debugging.
+
+### Phase 1 — Generate Seed Data
 
 ```bash
 python -m generator_v2.generator --validate
@@ -118,7 +155,7 @@ Produces 9 deterministic CSVs in `data/seed_v2/`. All 21 integrity checks must p
 
 ---
 
-## Step 2 — Phase 2: Deliver to S3 (optional)
+### Phase 2 — Deliver to S3 (optional)
 
 ```bash
 python delivery/deliver.py [--bucket gsf-demo-landing]
@@ -132,20 +169,20 @@ s3://gsf-demo-landing/ruby/positions_ruby.csv
 s3://gsf-demo-landing/reference/security_master_stub.csv
 ```
 
-Skip this step if using local file loading (default mode for `load_bronze.py`).
+Skip this step if using local file loading (default mode).
 
 ---
 
-## Step 3 — Phase 3: Bronze Ingest
+### Phase 3 — Bronze Ingest
 
 ```bash
-# Create Bronze tables (worksheet or SnowSQL)
+# Create Bronze tables (first run only — worksheet or SnowSQL)
 # snowsql -f pipeline_naive/ddl_bronze.sql
 
 # Load from local files (default — no AWS required)
 python pipeline_naive/load_bronze.py
 
-# OR load from S3 external stage (requires Step 0 S3 setup + Step 2)
+# OR load from S3 external stage (requires Step 0 S3 setup + Phase 2)
 python pipeline_naive/load_bronze.py --source s3
 ```
 
@@ -153,57 +190,56 @@ python pipeline_naive/load_bronze.py --source s3
 
 ---
 
-## Step 4 — Phase 4: Silver Transform
+### Phase 4 — dbt Transforms (Silver → Naive Gold + Semantic Gold)
 
 ```bash
-# Create Silver table (worksheet or SnowSQL)
-# snowsql -f pipeline_naive/ddl_silver.sql
-
-# Run naive ETL (worksheet or SnowSQL)
-# snowsql -f pipeline_naive/etl_silver.sql
-
-# Validate
-python pipeline_naive/validate_silver.py
+cd dbt
+dbt seed      # loads canonical account + security masters to GOLD schema
+dbt run       # builds SILVER, GOLD_NAIVE, GOLD models
+dbt test      # validates schema contracts for all three layers
+cd ..
 ```
 
-**Expected output:** 22,160 rows with intentional ambiguities:
+**What dbt builds:**
 
-| Check | Expected | Ambiguity |
-|---|---|---|
-| `SECURITY_MASTER_ID IS NULL` | ~15% | A8 |
-| `UNREALIZED_GL IS NULL` | ~22% | A11 |
-| `ASSET_CLASS IS NULL` | ~15% | A10 |
+| Schema | Models | Description |
+|--------|--------|-------------|
+| `SILVER` | `positions_integrated` | Naive union of all 3 sources (A7-A11 embedded) |
+| `GOLD_NAIVE` | `positions_naive` | Assumption-based Gold — 5 wrong assumptions |
+| `GOLD` | `dw_account`, `dw_security`, `dw_position`, `dw_trade_lot` | Governed DW tables |
+
+**Expected test results:**
+- Silver: allows ~15% NULL on `security_master_id` (A8 — by design)
+- Naive Gold: allows NULL `security_master_id` (dropped rows inflate some aggregates)
+- Semantic Gold: zero NULLs on PKs, FKs, and `unrealized_gain_loss`
 
 ---
 
-## Step 5 — Phase 5: Gold Load (Semantic Enriched Pipeline)
+### Phase 5 — Stage Cortex Analyst YAML Files
 
 ```bash
-# Create Gold tables and stage (worksheet or SnowSQL)
-# snowsql -f pipeline_semantic/setup_gold.sql
-
-# Load Gold DW tables + stage semantic model YAMLs
 python pipeline_semantic/load_gold.py
-
-# Validate
-python pipeline_semantic/validate_gold.py
 ```
 
-**Expected:** All GC1-GC12 checks pass — 100 accounts, 200 securities, 4,886 positions,
-12,388 lots, zero NULLs, all FKs resolve, YAML staged.
+Uploads all four semantic model YAMLs to `@GOLD.GSF_GOLD_STAGE/semantic/`:
+- `positions_bronze.yaml` — Bronze tier (thin, fragmented schemas)
+- `positions_silver.yaml` — Silver tier (A7-A11 embedded)
+- `positions_gold_naive.yaml` — Naive Gold tier (wrong assumptions)
+- `positions_gold.yaml` — Semantic Gold tier (resolves A1-A11)
 
 ---
 
-## Step 6 — Phase 6: Cortex Analyst Query
+### Phase 6 — Cortex Analyst Query (manual)
 
 ```bash
 # Gate question — governed Gold model
 python cortex/query_cortex.py --model gold
 # Expected: George Group Trust / $47,944,909.80
 
-# Same question — naive Silver model
+# Same question against other tiers
+python cortex/query_cortex.py --model gold_naive
 python cortex/query_cortex.py --model silver
-# Expected: no data (A4 — account_ref mismatch)
+python cortex/query_cortex.py --model bronze
 
 # Custom question
 python cortex/query_cortex.py --model gold --question "What is the total AUM?"
@@ -227,26 +263,35 @@ GRANT WRITE ON STAGE GSF_DEMO.GOLD.GSF_GOLD_STAGE TO ROLE SYSADMIN;
 
 ---
 
-## Step 7 — Phase 7: Variance Comparison + Visualization
+### Phase 7 — Variance Comparison + Visualization
 
 ```bash
-# Verify ground truth (no Snowflake needed)
+# Verify ground truth only (no Snowflake calls)
 python variance/runner.py --dry-run
 
-# Run all 11 questions against both models (~2-4 min)
+# Run all 11 questions against all 4 model tiers (~2-4 min)
 # Saves timestamped JSON to variance/results/
 python variance/runner.py
 
-# Run one model only
+# Run specific model(s) only
 python variance/runner.py --model gold
-python variance/runner.py --model silver
+python variance/runner.py --model silver gold_naive
 
 # Launch Streamlit app
 streamlit run app/streamlit_app.py
 ```
 
-The Streamlit app re-scores from raw rows on every load — comparator fixes apply
+The Streamlit app re-scores from raw JSON on every load — comparator fixes apply
 immediately without re-running Cortex.
+
+**Expected scorecard pattern:**
+
+| Tier | Expected Score | Why |
+|------|---------------|-----|
+| Bronze | Low | Fragmented schemas, no joins, different identifiers |
+| Silver | Better | Integrated but A7-A11 embedded |
+| Naive Gold | Mixed / poor | Wrong assumptions amplify Silver errors |
+| Semantic Gold | Correct | All 11 ambiguities explicitly resolved |
 
 ---
 

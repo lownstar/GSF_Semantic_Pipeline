@@ -93,53 +93,33 @@ See [docs/runbook.md](docs/runbook.md) for setup.
 -- infrastructure/cortex_setup.sql      (Cortex grants, Horizon tags)
 ```
 
-### 3. Generate seed data
+### 3. Run the pipeline
+
+The orchestrator runs all phases in sequence:
 
 ```bash
-python -m generator_v2.generator --validate
-# Produces 9 CSVs in data/seed_v2/ — all 21 integrity checks pass
+# Default run — phases 1, 3, 4, 5, 6 (local Bronze source, no S3 required)
+python run_pipeline.py
+
+# Load Bronze from S3 instead (requires Phase 2 / AWS credentials)
+python run_pipeline.py --phases 1 2 3 4 5 6 --source s3
+
+# Skip generation if seed data already exists
+python run_pipeline.py --phases 3 4 5 6
+
+# Validate ground truth only (no Snowflake calls)
+python run_pipeline.py --phases 6 --dry-run
+
+# Launch Streamlit after the run
+python run_pipeline.py --launch-app
 ```
 
-### 4. Deliver to S3 (optional — requires AWS credentials in .env)
-
-```bash
-python delivery/deliver.py
-# Uploads source CSVs to s3://gsf-demo-landing/ with per-source prefixes
-```
-
-### 5. Load Bronze + Silver
-
-```bash
-# Option A: local files (no AWS needed)
-python pipeline_naive/load_bronze.py
-
-# Option B: from S3 external stage
-python pipeline_naive/load_bronze.py --source s3
-
-# Run naive ETL (Snowflake worksheet or SnowSQL):
-# snowsql -f pipeline_naive/etl_silver.sql
-
-python pipeline_naive/validate_silver.py
-```
-
-### 6. Load Gold + semantic model
-
-```bash
-# snowsql -f pipeline_semantic/setup_gold.sql
-python pipeline_semantic/load_gold.py
-python pipeline_semantic/validate_gold.py
-```
-
-### 7. Run variance comparison + visualize
-
-```bash
-python variance/runner.py
-streamlit run app/streamlit_app.py
-```
+See [docs/runbook.md](docs/runbook.md) for the full manual step-by-step reference and
+one-time infrastructure setup instructions.
 
 Gate question: *"What is the total market value of account ACC-0042?"*
-- Gold: George Group Trust / **$47,944,909.80** (correct)
-- Silver: no data (A4 — account ID fragmentation)
+- Semantic Gold: George Group Trust / **$47,944,909.80** (correct)
+- Naive Gold / Silver / Bronze: wrong or no data (A4 — account ID fragmentation)
 
 ---
 
