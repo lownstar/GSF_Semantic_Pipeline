@@ -27,7 +27,10 @@ import sys
 import time
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 PROJECT_ROOT = Path(__file__).parent.resolve()
+load_dotenv(PROJECT_ROOT / ".env")
 DBT_DIR = PROJECT_ROOT / "dbt"
 
 DEFAULT_PHASES = [1, 3, 4, 5, 6]
@@ -36,7 +39,7 @@ PHASE_LABELS = {
     1: "Generate Seed Data",
     2: "S3 Delivery",
     3: "Bronze Ingest",
-    4: "dbt Transforms (Silver → Naive Gold + Semantic Gold)",
+    4: "dbt Transforms (Silver -> Naive Gold + Semantic Gold)",
     5: "Stage Cortex Analyst YAML Files",
     6: "Variance Comparison",
     7: "Streamlit App",
@@ -184,7 +187,7 @@ def phase_3(source: str, data_dir: str) -> None:
 
 
 def phase_4() -> None:
-    """Run dbt seed → dbt run → dbt test from the dbt/ subdirectory."""
+    """Run dbt seed -> dbt run -> dbt test from the dbt/ subdirectory."""
     if not DBT_DIR.exists():
         print()
         print(f"  [ABORT] dbt project directory not found: {DBT_DIR}")
@@ -193,12 +196,23 @@ def phase_4() -> None:
     _banner(4)
     t0 = time.time()
 
-    for sub_cmd in [["dbt", "seed"], ["dbt", "run"], ["dbt", "test"]]:
-        print(f"\n  Running: {' '.join(sub_cmd)}")
-        result = subprocess.run(sub_cmd, cwd=DBT_DIR)
+    # dbt-snowflake requires Python <3.14 (mashumaro incompatibility).
+    # Use "py -3.13 -m dbt.cli.main" to target a compatible interpreter.
+    DBT_CMD = ["py", "-3.13", "-m", "dbt.cli.main"]
+
+    # dbt needs a PEM key (not DER). Point it at the pre-converted PEM file
+    # using an absolute path so it resolves correctly from dbt/'s cwd.
+    dbt_env = os.environ.copy()
+    pem_file = PROJECT_ROOT / "snowflake_rsa_key.pem"
+    dbt_env["SNOWFLAKE_PRIVATE_KEY_PEM"] = str(pem_file)
+
+    for sub_cmd in [DBT_CMD + ["seed"], DBT_CMD + ["run"], DBT_CMD + ["test"]]:
+        label = "dbt " + sub_cmd[-1]
+        print(f"\n  Running: {label}")
+        result = subprocess.run(sub_cmd, cwd=DBT_DIR, env=dbt_env)
         if result.returncode != 0:
             print()
-            print(f"  [ABORT] Phase 4 failed at `{' '.join(sub_cmd)}` "
+            print(f"  [ABORT] Phase 4 failed at `{label}` "
                   f"(exit code {result.returncode})")
             print("  Fix the issue above and re-run with --phases 4+")
             sys.exit(1)

@@ -184,6 +184,7 @@ def run(data_dir: str, source: str) -> None:
 
         total_loaded = 0
         for table, filename, s3_key in LOAD_PLAN:
+            cur.execute(f"TRUNCATE TABLE {table}")
             if source == "s3":
                 total_loaded += load_table_s3(cur, table, s3_key)
             else:

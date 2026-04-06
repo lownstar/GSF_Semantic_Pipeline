@@ -39,11 +39,11 @@ models:
         description: Ticker symbol used by Emerald.
         tests: [unique, not_null]
       - name: asset_class
-        description: Asset class (Equity, Fixed Income, Real Estate, Cash). No NULLs — resolves A10.
+        description: Asset class. No NULLs — resolves A10.
         tests:
           - not_null
           - accepted_values:
-              values: [Equity, Fixed Income, Real Estate, Cash]
+              values: [Equity, Fixed Income, Real Estate, Cash, Alternatives, Commodities]
 
   - name: dw_position
     description: >

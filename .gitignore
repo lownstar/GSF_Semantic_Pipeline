@@ -30,6 +30,12 @@ Thumbs.db
 snowflake_config.json
 connections.toml
 *.p8
+*.pem
+
+# dbt runtime artifacts
+dbt/logs/
+dbt/target/
+dbt/.user.yml
 
 # Variance run results (reproducible via runner.py)
 variance/results/*.json

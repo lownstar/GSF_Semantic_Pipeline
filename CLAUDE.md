@@ -12,7 +12,7 @@ from confident wrong answers — even at the Gold layer.
 **The narrative:** *"Your org already has a dbt pipeline producing a Gold layer. Here's why
 Cortex still gets it wrong — and what the semantic model adds."*
 
-**GitHub:** https://github.com/lownstar/GSF_Semantci_Pipeline
+**GitHub:** https://github.com/lownstar/GSF_Semantic_Pipeline
 
 ---
 
