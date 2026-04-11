@@ -261,6 +261,23 @@ tables:
         expr: security_id
         data_type: TEXT
         unique: false
+      - name: source_system
+        synonyms:
+          - source
+          - originating system
+          - system
+        description: |
+          The source system that contributed this position row (TOPAZ, EMERALD, or RUBY).
+          Use to filter by source system or compare valuations across systems for the same
+          account × security × date. Topaz rows carry the authoritative custodian EOD price;
+          Emerald rows carry PM evaluated prices (±0.3%); Ruby rows carry NAV prices (±0.5%).
+        expr: source_system
+        data_type: TEXT
+        unique: false
+        sample_values:
+          - TOPAZ
+          - EMERALD
+          - RUBY
     time_dimensions:
       - name: position_date
         synonyms:

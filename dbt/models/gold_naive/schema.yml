@@ -11,7 +11,9 @@ models:
 
       Wrong assumptions:
         1. All prices equivalent — blends custodian EOD, PM evaluated, and NAV prices.
-        2. Quantities are comparable — lot-level Topaz rows inflated ~2-3x vs position-level.
+        2. Grain is uniform — Topaz lot-level rows coexist with position-level rows; COUNT
+           and cardinality queries are wrong, and row-level market value lookups return lot
+           fragments, not positions.
         3. Unmastered rows dropped — WHERE security_master_id IS NOT NULL excludes ~15% of AUM.
         4. NULL unrealized_gl propagated — Ruby rows (22%) excluded from G/L aggregations.
         5. Account refs unresolved — raw source keys passed through; canonical account_id absent.
@@ -45,8 +47,10 @@ models:
           (custodian EOD, PM ±0.3%, NAV ±0.5%). Not a valid benchmark price.
       - name: total_quantity
         description: >
-          Sum of quantity across all source rows. AMBIGUITY A7: Topaz lot-level rows
-          inflate Fixed Income totals by ~2-3x versus the true position-level count.
+          Sum of raw source quantities. For Topaz, lot-level rows are summed (correct within
+          Topaz alone), but coexisting with position-level Emerald/Ruby rows means COUNT-based
+          and cardinality queries against the Silver input are unreliable. AMBIGUITY A7: grain
+          mismatch is invisible in the schema; this aggregate inherits Silver's structural flaw.
       - name: total_market_value
         description: Sum of market_value. Computed from blended prices × inflated quantities.
       - name: total_unrealized_gl

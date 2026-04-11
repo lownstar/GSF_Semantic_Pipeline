@@ -67,8 +67,8 @@ def _q05_gt(pos, sec, acc):
     """Total quantity of Fixed Income securities across all portfolios.
 
     POSITIONS_INTEGRATED contains Topaz lot-level rows alongside Emerald/Ruby
-    position-level rows. Summing quantity across all rows inflates the total
-    by the average lot count per security (~2.5×).
+    position-level rows. Ground truth is computed at position grain (lots collapsed),
+    which is what the semantic Gold layer provides via DW_POSITION.
     """
     fi_ids = sec[sec["asset_class"] == "Fixed Income"]["security_id"]
     return float(pos[pos["security_id"].isin(fi_ids)]["quantity"].sum())
@@ -209,9 +209,11 @@ QUESTIONS: list[Question] = [
         ambiguity_codes=["A5", "A7"],
         failure_mode_silver=(
             "POSITIONS_INTEGRATED contains Topaz lot-level rows (LOT-* record_ids) "
-            "alongside Emerald/Ruby position-level rows (POS-*, NAV-*). Summing "
-            "quantity across all rows inflates the Fixed Income total by roughly 2–3× "
-            "because Topaz contributes one row per tax lot, not one row per position."
+            "alongside Emerald/Ruby position-level rows (POS-*, NAV-*). Grain is mixed "
+            "and invisible — COUNT queries overcount Topaz positions, and any query "
+            "treating one row as one position returns a lot fragment instead of the full "
+            "position value. The observable symptom: a list query and a count query for "
+            "the same question return different cardinalities with no error."
         ),
         ground_truth_description="Total quantity of Fixed Income securities at position grain (DW_POSITION)",
         result_type="scalar",

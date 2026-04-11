@@ -272,18 +272,27 @@ All three formats are VARCHAR in the same column. There is no `grain` column. Th
 `source_system` column is present but a naive query against `POSITIONS_INTEGRATED`
 will not filter on it.
 
-**Why it causes silent double-counting:**
+**Why it causes silent errors:**
 For any given account × security, Topaz contributes 2–4 lot rows (lot-level grain) while
-Emerald and Ruby each contribute exactly 1 row (position-level grain). A naive
-`SUM(quantity)` without a `WHERE source_system = ...` filter produces a result roughly
-2.5× higher than the true position for any security held in Topaz, and 3× higher when
-all three sources contribute.
+Emerald and Ruby each contribute exactly 1 row (position-level grain). Summing Topaz lots
+alone produces the correct position total (lots roll up correctly). What breaks is any
+query that does not explicitly account for grain:
+
+- **COUNT queries overcount**: `COUNT(*)` on Topaz positions returns lot count, not
+  position count. A client with 3 AAPL lots counts as 3.
+- **Cardinality mismatches**: `SELECT DISTINCT account_ref WHERE security_ref = 'AAPL'`
+  returns 47 rows; `SELECT COUNT(*) WHERE security_ref = 'AAPL'` returns 63. Both are
+  "correct" SQL. Neither flags an error. The numbers don't reconcile.
+- **Row-level assumptions break**: Any consumer treating "one row = one position" (a
+  report, an ETL, Cortex Analyst doing a single-row lookup) gets a lot fragment for
+  Topaz holdings instead of the full position value.
 
 **What Cortex A gets wrong:**
-*"What is the total quantity of fixed income securities held across all portfolios?"*
-Cortex sums `quantity` across all rows. Topaz lots inflate the result relative to
-Emerald/Ruby position rows. The overcount factor varies by security (proportional to
-its average lot count) and is not detectable from the result set.
+*"How many clients hold Fixed Income securities?"*
+Cortex issues a COUNT without filtering on source_system or grain. Topaz lot rows
+inflate the count. The error is not detectable from the result — it's a number, no
+warning. The parallel question — "list the clients holding Fixed Income" — returns a
+different row count, which is the observable symptom.
 
 **What the semantic model defines (Env B):**
 - `DW_POSITION.quantity` — canonical position-level grain, lots already collapsed
@@ -443,7 +452,7 @@ the figure.
 | A4 | Account ID fragmentation | Raw source files | No FK linking the three account identifiers | "Total cost basis for fixed income across all accounts?" |
 | A5 | Position grain mismatch | Raw source files | Summing across grains double-counts | "Total quantity in Apple across all accounts?" |
 | A6 | Date field semantics | Raw source files | Settlement / trade / NAV dates diverge at period-end | "All positions as of December 31, 2024?" |
-| A7 | Mixed-grain record IDs | Integrated table | Lot IDs and position IDs coexist; SUM double-counts Topaz | "Total quantity of fixed income across all portfolios?" |
+| A7 | Mixed-grain record IDs | Integrated table | Lot IDs and position IDs coexist; COUNT queries overcount and cardinality between related queries diverges | "How many clients hold Fixed Income securities?" |
 | A8 | Unmastered security IDs | Integrated table | security_master_id NULL for 15%; JOIN silently drops them | "Total market value of all fixed income positions?" |
 | A9 | Cost basis fragmentation | Integrated table | Lot cost / avg cost / book cost blended in one column | "Total unrealized gain for the equity sleeve?" |
 | A10 | Asset class classification gap | Integrated table | asset_class NULL for unmastered rows; allocation % wrong | "What % of AUM is allocated to fixed income?" |

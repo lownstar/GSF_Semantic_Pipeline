@@ -1,5 +1,41 @@
 # Refactoring Changelog
 
+---
+
+## A7 Framing Correction (2026-04-10)
+
+### Why
+
+During a code walkthrough, the A7 (Mixed-Grain Record IDs) narrative was identified as
+technically incorrect. The prior framing — "summing quantity across all sources inflates
+Fixed Income totals by ~2-3x" — implies SUM() is broken. It is not: Topaz lots roll up
+correctly to the position total within Topaz. What A7 actually breaks is:
+
+- **COUNT queries**: `COUNT(*)` counts lots as positions for Topaz accounts
+- **Cardinality mismatches**: a list query ("which clients hold AAPL?") and a count
+  query ("how many clients hold AAPL?") return different row counts against Silver with
+  no error — the numbers simply don't reconcile
+- **Row-level assumptions**: any consumer treating "one row = one position" gets a lot
+  fragment (partial market value, not the full position) for Topaz holdings
+
+### Files Updated
+
+| File | What changed |
+|---|---|
+| `dbt/models/silver/schema.yml` | `quantity` column description |
+| `dbt/models/gold_naive/schema.yml` | Model description + `total_quantity` column description |
+| `dbt/models/gold_naive/positions_naive.sql` | Two inline comments |
+| `semantic_model/positions_gold_naive.yaml` | Header comment + `total_quantity` description |
+| `semantic_model/positions_bronze.yaml` | `units` fact description |
+| `docs/ambiguity_registry_v2.md` | Summary table row + full A7 body section |
+| `variance/questions.py` | `failure_mode_silver` for Q05 + `_q05_gt` docstring |
+
+### Canonical A7 narrative going forward
+
+> *"Grain mismatch is invisible in the schema. COUNT queries overcount Topaz lot rows
+> as positions. The observable symptom: ask the same question as a list and as a count
+> — you get different numbers, with no error."*
+
 Documents the transition from PoC (Epics 1-5) to portfolio-grade pipeline demo.
 The baseline commit (`3e6e175`) captures the full PoC state before any changes.
 

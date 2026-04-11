@@ -75,7 +75,7 @@ tables:
         synonyms:
           - shares
           - quantity
-        description: Units held at lot level. Sum across lots gives position total, but inflates vs Emerald/Ruby position-level counts.
+        description: Units held at lot level. Sum across lots gives the correct position total within Topaz, but coexisting with Emerald/Ruby position-level rows means COUNT and cardinality queries against combined data break.
         expr: UNITS
         data_type: NUMBER
         default_aggregation: sum

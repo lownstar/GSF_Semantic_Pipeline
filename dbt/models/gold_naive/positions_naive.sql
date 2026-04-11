@@ -10,8 +10,8 @@
 -- Wrong assumptions applied:
 --   1. All prices are equivalent — no source discrimination applied. Blended prices
 --      from Topaz (EOD), Emerald (±0.3%), and Ruby (NAV ±0.5%) are treated as one.
---   2. Quantities are comparable across sources — Topaz lot-level rows are summed
---      alongside Emerald/Ruby position-level rows, inflating Fixed Income totals ~2-3x.
+--   2. Grain is uniform — Topaz lot-level rows are summed alongside Emerald/Ruby
+--      position-level rows; COUNT and cardinality queries against the Silver input break.
 --   3. NULL security_master_id rows are silently dropped — GROUP BY on security_master_id
 --      excludes ~15% of positions, systematically understating AUM.
 --   4. NULL unrealized_gl is propagated — Ruby G/L gaps are not computed; any
@@ -39,10 +39,10 @@ SELECT
     ROUND(AVG(price), 4)                AS avg_price,
 
     -- Wrong assumption 2: sum quantities without grain adjustment
-    -- Topaz lot rows (2-3 per position) inflate Fixed Income quantity ~2-3x
+    -- Topaz lot rows (2-3 per position) coexist with position-level rows; COUNT/cardinality queries break
     SUM(quantity)                       AS total_quantity,
 
-    -- Market value computed from blended prices × inflated quantities
+    -- Market value computed from blended prices × mixed-grain quantities
     ROUND(SUM(market_value), 2)         AS total_market_value,
 
     -- Wrong assumption 4: propagate NULL unrealized_gl (Ruby rows excluded from SUM)
