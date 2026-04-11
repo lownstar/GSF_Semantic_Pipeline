@@ -2,6 +2,40 @@
 
 ---
 
+## dw_position: Collapse to 1 Canonical Row per Position (2026-04-11)
+
+### Why
+
+Running `variance/runner.py` after the dbt integration revealed that `dw_position`
+produced 3 rows per account × security × position_date — one per source system
+(TOPAZ, EMERALD, RUBY) via a UNION ALL of three CTEs. Cortex Analyst generates
+`SUM(market_value)` without a source_system filter, returning 3× the correct value.
+Gold score: 0/11. Q01 (ACC-0042 market value) returned $143.8M vs ground truth $47.9M.
+
+Topaz is already the authoritative source for price, market_value, cost_basis, and
+quantity (custodian EOD, lot-level detail collapsed per the Topaz CTE). Emitting only
+the Topaz-resolved row produces one canonical row at the correct grain.
+
+### Files Updated
+
+| File | What changed |
+|---|---|
+| `dbt/models/gold_semantic/dw_position.sql` | Replace UNION ALL final SELECT with Topaz-only output; remove source_system from position_id hash; update header comment |
+| `dbt/models/gold_semantic/schema.yml` | Update dw_position description, position_id, position_date, market_price, cost_basis; remove source_system column |
+| `semantic_model/positions_gold.yaml` | Remove source_system dimension (column no longer in table) |
+| `pipeline_semantic/validate_gold.py` | No change needed — Topaz-only still produces 4,886 rows (matches seed CSV) |
+| `pipeline_semantic/setup_gold.sql` | Remove source_system VARCHAR(10) from DW_POSITION DDL |
+
+### Expected Outcome
+
+After `dbt run`:
+- DW_POSITION: ~1,629 rows (was 4,886 = 3 × 1,629)
+- Q01 (ACC-0042 market value): ~$47.9M (was $143.8M = 3×)
+- Q03 (total market value): ~$6.1B (was $18.3B = 3×)
+- Gold score should rise from 0/11 to close to 11/11
+
+---
+
 ## A7 Framing Correction (2026-04-10)
 
 ### Why

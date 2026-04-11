@@ -88,7 +88,6 @@ CREATE OR REPLACE TABLE GOLD.DW_POSITION (
     cost_basis              DECIMAL(18,2)   NOT NULL    COMMENT 'Sum of specific lot costs from DW_TRADE_LOT. Resolves A9: specific identification method throughout.',
     unrealized_gain_loss    DECIMAL(18,2)   NOT NULL    COMMENT 'market_value − cost_basis. Resolves A11: computed for ALL positions (no Ruby NULL gap).',
     currency                VARCHAR(3)      NOT NULL    COMMENT 'ISO currency code.',
-    source_system           VARCHAR(10)     NOT NULL    COMMENT 'DW — indicates canonical origin, not a raw source system.',
     CONSTRAINT pk_dw_position PRIMARY KEY (position_id),
     CONSTRAINT fk_position_account  FOREIGN KEY (account_id)  REFERENCES GOLD.DW_ACCOUNT (account_id),
     CONSTRAINT fk_position_security FOREIGN KEY (security_id) REFERENCES GOLD.DW_SECURITY (security_id)

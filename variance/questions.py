@@ -230,7 +230,7 @@ QUESTIONS: list[Question] = [
             "looks normalized but the semantic distinction between date types is lost."
         ),
         ground_truth_description="Count of positions in DW_POSITION with position_date = 2024-12-31 (trade-date basis)",
-        result_type="row_count",
+        result_type="scalar",
         ground_truth_fn=_q06_gt,
     ),
     Question(
@@ -249,7 +249,7 @@ QUESTIONS: list[Question] = [
     ),
     Question(
         id="Q08",
-        natural_language="What is the total unrealized gain for the Equity sleeve?",
+        natural_language="What is the total unrealized gain/loss for the Equity sleeve?",
         ambiguity_codes=["A9"],
         failure_mode_silver=(
             "POSITIONS_INTEGRATED.cost_basis blends three incompatible accounting methods: "
@@ -288,7 +288,7 @@ QUESTIONS: list[Question] = [
             "The result looks complete but covers only two of three source systems."
         ),
         ground_truth_description="Count of positions in DW_POSITION with unrealized_gain_loss < -$10,000",
-        result_type="row_count",
+        result_type="scalar",
         ground_truth_fn=_q10_gt,
     ),
     Question(

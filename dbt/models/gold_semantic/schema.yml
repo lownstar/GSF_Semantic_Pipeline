@@ -48,18 +48,18 @@ models:
   - name: dw_position
     description: >
       Governed position fact table at position-level grain. One row per account ×
-      security × position_date × source_system. All ambiguities resolved:
+      security × position_date (Topaz as authoritative source). All ambiguities resolved:
         A1  — security joined via canonical identifier per source
         A2  — Topaz market_price is custodian EOD (authoritative)
         A3/A4 — account joined via canonical account_id
         A5/A7 — Topaz lots aggregated to position grain
         A8  — all 200 securities present; no dropped rows
-        A9  — cost_basis method is explicit per source_system
+        A9  — Topaz specific-lot cost is the authoritative method (single method)
         A10 — asset_class available via dw_security join
         A11 — unrealized_gain_loss computed for all rows including Ruby
     columns:
       - name: position_id
-        description: MD5 surrogate key (account_id | security_id | position_date | source_system).
+        description: MD5 surrogate key (account_id | security_id | position_date).
         tests: [unique, not_null]
       - name: account_id
         description: Canonical account identifier. Foreign key to dw_account.
@@ -76,7 +76,7 @@ models:
               to: ref('dw_security')
               field: security_id
       - name: position_date
-        description: Position date (settlement for Topaz, trade date for Emerald, NAV date for Ruby).
+        description: Position date on custodian settlement basis (Topaz). Resolves A6.
         tests: [not_null]
       - name: quantity
         description: >
@@ -85,28 +85,19 @@ models:
         tests: [not_null]
       - name: market_price
         description: >
-          Unit price from the source system. For Topaz: custodian EOD (authoritative).
-          For Emerald: PM evaluated (±0.3%). For Ruby: NAV per share (±0.5%).
-          The semantic model directs price queries to Topaz rows only. Resolves A2.
+          Custodian EOD closing price per unit (Topaz). The single authoritative price source.
+          Resolves A2.
       - name: market_value
         description: Market value as reported by the source system.
       - name: cost_basis
         description: >
-          Cost basis as reported by the source. Method varies by source_system:
-          specific lot (Topaz), avg cost × qty (Emerald), book cost (Ruby).
-          Use source_system filter to select the appropriate method. Resolves A9.
+          Sum of specific lot costs from DW_TRADE_LOT. Topaz specific-lot method
+          is used throughout — the single authoritative method. Resolves A9.
       - name: unrealized_gain_loss
         description: >
           Unrealized gain/loss. Computed as market_value - cost_basis for Ruby rows
           (where Silver had NULL). No NULLs in this column. Resolves A11.
         tests: [not_null]
-      - name: source_system
-        description: Source system of record for this position row.
-        tests:
-          - not_null
-          - accepted_values:
-              values: [TOPAZ, EMERALD, RUBY]
-
   - name: dw_trade_lot
     description: >
       Lot-level detail scoped exclusively to Topaz (the custodian system).
