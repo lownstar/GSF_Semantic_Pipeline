@@ -27,11 +27,17 @@ SELECT CURRENT_ORGANIZATION_NAME() || '-' || CURRENT_ACCOUNT_NAME();
 
 **One-time setup:**
 
-1. Generate RSA key pair:
+1. Generate all three key files:
 ```bash
 openssl genrsa 2048 | openssl pkcs8 -topk8 -nocrypt -outform DER -out snowflake_rsa_key.p8
 openssl rsa -inform DER -in snowflake_rsa_key.p8 -pubout -outform PEM -out snowflake_rsa_key.pub
+openssl pkcs8 -topk8 -nocrypt -in snowflake_rsa_key.p8 -inform DER -outform PEM -out snowflake_rsa_key.pem
 ```
+
+Three files are produced:
+- `snowflake_rsa_key.p8` — private key (DER format) used by Python scripts
+- `snowflake_rsa_key.pub` — public key for Snowflake registration
+- `snowflake_rsa_key.pem` — private key (PEM format) used by dbt
 
 2. Register the public key in Snowflake:
 ```sql
@@ -39,13 +45,18 @@ ALTER USER DAVIDLOWE80NWL SET RSA_PUBLIC_KEY='<paste key body here>';
 DESC USER DAVIDLOWE80NWL;  -- verify RSA_PUBLIC_KEY_FP is non-null
 ```
 
-3. Add to `.env`:
+3. Add both key vars to `.env`:
 ```
-SNOWFLAKE_PRIVATE_KEY_FILE=snowflake_rsa_key.p8
+SNOWFLAKE_PRIVATE_KEY_FILE=snowflake_rsa_key.p8    # Python scripts
+SNOWFLAKE_PRIVATE_KEY_PEM=snowflake_rsa_key.pem    # dbt
 ```
 
+**Why two vars?** Python scripts load the DER key directly via `cryptography`. dbt reads
+the path via `profiles.yml` → `private_key_path` and expects PEM format. Both point to
+the same underlying key pair — just different encoding formats.
+
 **Notes:**
-- `snowflake_rsa_key.p8` is gitignored — never commit it
+- All three key files are gitignored — never commit them
 - `SNOWFLAKE_USER` must be `DAVIDLOWE80NWL` exactly (JWT is case-sensitive)
 - `SNOWFLAKE_ACCOUNT` must be `WYXTVOC-AEB50319` (regionless org-based format)
 - All `PUT` commands convert Windows backslashes to forward slashes automatically
@@ -64,8 +75,12 @@ Or configure `~/.aws/credentials` — boto3 reads it automatically.
 
 ### dbt Profile
 
-`dbt/profiles.yml` reads Snowflake credentials from the same `.env` vars as the Python
-scripts. No separate dbt configuration is needed beyond the `.env` file.
+`dbt/profiles.yml` reads Snowflake credentials from `.env` via environment variables.
+The key difference from the Python scripts: dbt requires `SNOWFLAKE_PRIVATE_KEY_PEM`
+(the path to the PEM file), not `SNOWFLAKE_PRIVATE_KEY_FILE` (the DER/p8 file).
+Both must be set in `.env` — see the Key-Pair Authentication section above.
+
+No other dbt configuration is needed beyond the `.env` file.
 
 ---
 
@@ -284,14 +299,107 @@ streamlit run app/streamlit_app.py
 The Streamlit app re-scores from raw JSON on every load — comparator fixes apply
 immediately without re-running Cortex.
 
-**Expected scorecard pattern:**
+**Expected scorecard:**
 
-| Tier | Expected Score | Why |
-|------|---------------|-----|
-| Bronze | Low | Fragmented schemas, no joins, different identifiers |
-| Silver | Better | Integrated but A7-A11 embedded |
-| Naive Gold | Mixed / poor | Wrong assumptions amplify Silver errors |
-| Semantic Gold | Correct | All 11 ambiguities explicitly resolved |
+| Tier | Score | Why |
+|------|-------|-----|
+| Bronze | 1/11 (9%) | Fragmented schemas — most questions unanswerable (no cross-source joins, no `account_id`) |
+| Silver | 0/11 (0%) | Looks integrated but A7-A11 embedded — returns plausible but wrong answers for all 11 questions |
+| Naive Gold | 0/11 (0%) | Well-structured dbt Gold layer but no semantic model — same confident failures as Silver |
+| Semantic Gold | 11/11 (100%) | Semantic model resolves all 11 ambiguities explicitly |
+
+The Silver and Naive Gold 0/11 scores are the demo's core argument: you cannot fix AI bias with better ETL alone.
+Governance at the semantic layer is the key variable.
+
+---
+
+## Recovery: Re-running After a Break
+
+Use this section when the pipeline is in an unknown state and you need to restore a clean demo environment.
+
+### What to re-run and when
+
+| Symptom | Fix |
+|---------|-----|
+| Bronze tables empty or wrong row counts | Re-run Phase 3: `python pipeline_naive/load_bronze.py` |
+| Silver / Gold tables missing or stale | Re-run Phase 4: `cd dbt && dbt run` |
+| dbt tests fail | Diagnose with `dbt test --select <model_name>` then re-run `dbt run` |
+| Cortex returns wrong answers | Re-run Phase 5 (restage YAMLs): `python pipeline_semantic/load_gold.py` |
+| Variance scores look wrong | Re-run Phase 7: `python variance/runner.py` |
+| Everything is suspect | Full reset — see below |
+
+### Full reset (clean slate)
+
+Drops and rebuilds all Snowflake tables. Run from the project root with `.venv` active and `.env` loaded.
+
+```bash
+# Step 1 — Regenerate seed data (skip if data/seed_v2/ already exists)
+python -m generator_v2.generator --validate
+
+# Step 2 — Reload Bronze
+python pipeline_naive/load_bronze.py
+
+# Step 3 — Rebuild Silver, Naive Gold, Semantic Gold via dbt
+cd dbt && dbt run && dbt test && cd ..
+
+# Step 4 — Restage all Cortex Analyst YAML files
+python pipeline_semantic/load_gold.py
+
+# Step 5 — Validate Gold DW tables (row counts, FK integrity, NULL checks)
+python pipeline_semantic/validate_gold.py
+
+# Step 6 — Re-run variance comparison
+python variance/runner.py
+
+# Step 7 — Launch Streamlit
+streamlit run app/streamlit_app.py
+```
+
+Or use the orchestrator to run phases 3-7 in one command:
+
+```bash
+python run_pipeline.py --phases 3 4 5 6
+```
+
+### Diagnosing dbt failures
+
+```bash
+cd dbt
+
+# See which tests are failing
+dbt test
+
+# Re-run a single model
+dbt run --select dw_position
+
+# Check compiled SQL (what dbt actually sent to Snowflake)
+cat target/compiled/gsf_demo/models/gold_semantic/dw_position.sql
+
+# Full parse (clears dbt's partial-parse cache)
+dbt run --no-partial-parse
+```
+
+### Checking Snowflake directly
+
+```sql
+-- Quick row count audit
+SELECT 'BRONZE.TOPAZ_POSITIONS'   , COUNT(*) FROM GSF_DEMO.BRONZE.TOPAZ_POSITIONS   UNION ALL
+SELECT 'BRONZE.EMERALD_POSITIONS' , COUNT(*) FROM GSF_DEMO.BRONZE.EMERALD_POSITIONS UNION ALL
+SELECT 'BRONZE.RUBY_POSITIONS'    , COUNT(*) FROM GSF_DEMO.BRONZE.RUBY_POSITIONS    UNION ALL
+SELECT 'BRONZE.SECURITY_MASTER_STUB', COUNT(*) FROM GSF_DEMO.BRONZE.SECURITY_MASTER_STUB UNION ALL
+SELECT 'SILVER.POSITIONS_INTEGRATED', COUNT(*) FROM GSF_DEMO.SILVER.POSITIONS_INTEGRATED UNION ALL
+SELECT 'GOLD.DW_ACCOUNT'          , COUNT(*) FROM GSF_DEMO.GOLD.DW_ACCOUNT          UNION ALL
+SELECT 'GOLD.DW_SECURITY'         , COUNT(*) FROM GSF_DEMO.GOLD.DW_SECURITY         UNION ALL
+SELECT 'GOLD.DW_POSITION'         , COUNT(*) FROM GSF_DEMO.GOLD.DW_POSITION         UNION ALL
+SELECT 'GOLD.DW_TRADE_LOT'        , COUNT(*) FROM GSF_DEMO.GOLD.DW_TRADE_LOT        UNION ALL
+SELECT 'GOLD_NAIVE.POSITIONS_NAIVE', COUNT(*) FROM GSF_DEMO.GOLD_NAIVE.POSITIONS_NAIVE;
+
+-- Expected: 12388 / 4886 / 4886 / 170 / 22160 / 100 / 200 / 4886 / 12388 / 12393
+
+-- Check what's staged in the semantic model stage
+LIST @GSF_DEMO.GOLD.GSF_GOLD_STAGE/semantic/;
+-- Expected: 4 YAML files (positions_bronze, positions_silver, positions_gold_naive, positions_gold)
+```
 
 ---
 

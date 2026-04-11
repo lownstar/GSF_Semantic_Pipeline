@@ -64,7 +64,7 @@ portfolio-grade pipeline demo. See [docs/refactoring_changelog.md](docs/refactor
 | 3 | S3 delivery layer (boto3, external stage) | Complete |
 | 4 | dbt integration — four-tier comparison (Bronze/Silver/Naive Gold/Semantic Gold) | Complete |
 | 5 | Unified orchestrator (run_pipeline.py) | Complete |
-| 6 | Documentation polish | Next |
+| 6 | Documentation polish | Complete |
 
 **Epics completed (PoC phase):** 1 (data generator), 2 (Naive Pipeline), 3 (Semantic
 Pipeline), 4 (Cortex Analyst), 5 (variance + Streamlit).
@@ -127,46 +127,57 @@ Gate question: *"What is the total market value of account ACC-0042?"*
 
 ```
 gsf-semantic-pipeline/
+├── run_pipeline.py         # Unified orchestrator — single entry point for all phases
 ├── generator_v2/           # Phase 1: Deterministic seed data generator (seed=42)
 ├── delivery/               # Phase 2: S3 delivery module (boto3)
 │   ├── deliver.py          # Upload source CSVs to S3 landing zone
 │   └── config.py           # Bucket, prefix, file mapping config
-├── pipeline_naive/         # Naive Pipeline scripts
-│   ├── load_bronze.py      # Phase 3: Bronze ingest (local or S3)
-│   ├── validate_silver.py  # Silver validation (SC1-SC9)
-│   ├── ddl_bronze.sql      # Bronze table DDL
-│   ├── ddl_silver.sql      # Silver table DDL
-│   └── etl_silver.sql      # Phase 4: Naive ETL -> POSITIONS_INTEGRATED
-├── pipeline_semantic/      # Semantic Enriched Pipeline scripts
-│   ├── load_gold.py        # Phase 5: Gold DW load + stage YAMLs
-│   ├── validate_gold.py    # Gold validation (GC1-GC12)
-│   └── setup_gold.sql      # Gold table DDL + stage creation
-├── infrastructure/         # One-time Snowflake setup SQL
+├── pipeline_naive/         # Bronze ingest scripts
+│   ├── load_bronze.py      # Phase 3: Bronze ingest (PUT/COPY — local or S3)
+│   ├── ddl_bronze.sql      # Bronze table DDL (reference — run once in Snowsight)
+│   ├── ddl_silver.sql      # Silver table DDL (reference)
+│   └── etl_silver.sql      # Legacy ETL reference (replaced by dbt Silver model)
+├── dbt/                    # Phase 4: All Silver → Gold transforms
+│   ├── dbt_project.yml     # Project config (schemas: SILVER / GOLD_NAIVE / GOLD)
+│   ├── profiles.yml        # Snowflake connection (reads from .env)
+│   ├── models/
+│   │   ├── sources.yml     # Bronze source declarations
+│   │   ├── silver/         # SILVER.POSITIONS_INTEGRATED (22,160 rows)
+│   │   ├── gold_naive/     # GOLD_NAIVE.POSITIONS_NAIVE (assumption-based)
+│   │   └── gold_semantic/  # GOLD.DW_ACCOUNT / DW_SECURITY / DW_POSITION / DW_TRADE_LOT
+│   ├── seeds/              # Canonical account + security masters (loaded to GOLD)
+│   └── macros/             # generate_schema_name.sql (exact schema name override)
+├── pipeline_semantic/      # Phase 5: YAML staging only (dbt owns table population)
+│   ├── load_gold.py        # Stage all 4 Cortex Analyst YAMLs to @GSF_GOLD_STAGE
+│   ├── validate_gold.py    # Gold DW validation (row counts, FKs, NULLs)
+│   └── setup_gold.sql      # Gold DDL reference (run once — dbt creates actual tables)
+├── infrastructure/         # One-time Snowflake setup SQL (run as ACCOUNTADMIN)
 │   ├── snowflake_setup.sql # Database, schemas, warehouse, role
 │   ├── cortex_setup.sql    # Cortex grants, Horizon governance tags
 │   └── s3_external_stage.sql # S3 storage integration + external stage
 ├── semantic_model/         # Cortex Analyst YAML files (one per tier)
 │   ├── positions_bronze.yaml      # Bronze — raw, fragmented
-│   ├── positions_silver.yaml      # Silver — naive, A7-A11 embedded
+│   ├── positions_silver.yaml      # Silver — integrated but A7-A11 embedded
 │   ├── positions_gold_naive.yaml  # Naive Gold — assumption-based
 │   └── positions_gold.yaml        # Semantic Gold — governed, resolves A1-A11
 ├── cortex/                 # Phase 6: Cortex Analyst query runner
 │   └── query_cortex.py     # REST API; --model gold|gold_naive|silver|bronze
 ├── variance/               # Phase 7: Variance comparison
-│   ├── questions.py        # 11-question bank (one per ambiguity A1-A11)
-│   ├── ground_truth.py     # Ground truth from seed CSVs (no Snowflake)
+│   ├── questions.py        # 11-question bank with ground truth functions
+│   ├── ground_truth.py     # Computes ground truth from seed CSVs (no Snowflake)
 │   ├── comparator.py       # CORRECT/WRONG/NO_DATA/ERROR scoring
-│   └── runner.py           # Orchestrates questions, saves results JSON
+│   ├── runner.py           # Orchestrates 4-model run, saves timestamped JSON
+│   └── results/            # JSON output from each runner.py invocation
 ├── app/                    # Phase 7: Streamlit visualization
-│   └── streamlit_app.py    # Scorecard, bar chart, detail tables
-├── data/seed_v2/           # Generated CSVs (reproducible via generator_v2)
+│   └── streamlit_app.py    # Scorecard, bar chart, per-question detail
+├── data/seed_v2/           # Generated CSVs (reproducible via generator_v2, seed=42)
 └── docs/                   # Project documentation
-    ├── architecture.md     # Lifecycle phases, data flow, Snowflake objects
-    ├── ambiguity_registry_v2.md  # All 11 ambiguities (A1-A11)
-    ├── runbook.md          # Step-by-step pipeline execution
-    ├── decisions.md        # Architectural decision log
-    ├── epic_history.md     # Epic 1-5 completion history
-    └── refactoring_changelog.md  # What changed and why
+    ├── architecture.md          # Lifecycle phases, data flow, Snowflake objects
+    ├── ambiguity_registry_v2.md # All 11 ambiguities (A1-A11)
+    ├── runbook.md               # Step-by-step pipeline execution + recovery
+    ├── decisions.md             # Architectural decision log
+    ├── epic_history.md          # Epic 1-5 completion history (PoC phase)
+    └── refactoring_changelog.md # What changed and why (PoC → portfolio)
 ```
 
 ---
@@ -201,7 +212,7 @@ See [docs/ambiguity_registry_v2.md](docs/ambiguity_registry_v2.md) for full deta
 | Schema | `GSF_DEMO.BRONZE` | Active |
 | Schema | `GSF_DEMO.SILVER` | Active |
 | Schema | `GSF_DEMO.GOLD` | Active |
-| Schema | `GSF_DEMO.GOLD_NAIVE` | Planned (Step 5) |
+| Schema | `GSF_DEMO.GOLD_NAIVE` | Active |
 | Stage | `@BRONZE.GSF_BRONZE_STAGE` | Active (local loads) |
 | Stage | `@BRONZE.GSF_S3_LANDING` | Planned (Step 3 SQL, needs IAM setup) |
 | Stage | `@GOLD.GSF_GOLD_STAGE` | Active (semantic YAMLs) |
@@ -214,8 +225,9 @@ See [docs/ambiguity_registry_v2.md](docs/ambiguity_registry_v2.md) for full deta
 |---|---|
 | Phase 1: Generation | Python (Faker, deterministic seed=42) |
 | Phase 2: Delivery | AWS S3 + boto3 |
-| Phase 3-4: Ingest + Transform | Snowflake (COPY INTO, SQL ETL / dbt planned) |
-| Phase 5: Gold Enrichment | Snowflake + Cortex Analyst semantic model YAML |
+| Phase 3: Bronze Ingest | Snowflake (PUT + COPY INTO) |
+| Phase 4: Silver → Gold Transform | dbt (Silver, Naive Gold, Semantic Gold models) |
+| Phase 5: Gold Enrichment | Cortex Analyst YAML (staged to Snowflake internal stage) |
 | Phase 6: AI Querying | Snowflake Cortex Analyst (natural language → SQL) |
 | Phase 7: Analysis | Python + Streamlit |
 | Hosting | AWS (planned) |

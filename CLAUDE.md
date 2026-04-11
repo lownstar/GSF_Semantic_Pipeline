@@ -114,6 +114,11 @@ streamlit run app/streamlit_app.py
 
 Key-pair authentication required (Duo MFA blocks scripted password auth).
 Account: `WYXTVOC-AEB50319` | User: `DAVIDLOWE80NWL`
+
+Two env vars required — Python scripts and dbt use different key formats:
+- `SNOWFLAKE_PRIVATE_KEY_FILE=snowflake_rsa_key.p8` — DER format (Python scripts)
+- `SNOWFLAKE_PRIVATE_KEY_PEM=snowflake_rsa_key.pem` — PEM format (dbt)
+
 See `docs/runbook.md` for key generation and registration steps.
 
 ---
