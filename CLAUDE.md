@@ -1,6 +1,6 @@
 # GSF Semantic Pipeline
 
-Portfolio demo proving the semantic layer is a **bias control mechanism** for AI-generated
+Portfolio demo proving the semantic layer is a **governance mechanism** for AI-generated
 results. Three synthetic legacy source systems (Topaz, Emerald, Ruby) produce position data
 with different schemas. Two pipelines process the same data through seven lifecycle phases:
 
@@ -125,5 +125,5 @@ See `docs/runbook.md` for key generation and registration steps.
 
 ## Epic 6 Plug-in Point
 
-The AI Bias Analysis Tool (Epic 6) is a separate project. Input contract:
-`variance/results/*.json`. Future orchestrator flag: `--with-bias-analysis`.
+Epic 6 is a separate project consuming `variance/results/*.json`.
+Future orchestrator flag: `--with-analysis`.

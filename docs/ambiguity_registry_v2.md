@@ -1,6 +1,6 @@
 # Ambiguity Registry V2 — Cross-Source (Gemstone Systems)
 
-This document is the **design contract** for the V2 Semantic Layer Bias demo.
+This document is the **design contract** for the GSF Semantic Pipeline demo.
 
 Each entry describes one intentional ambiguity baked into the demo data:
 - What the raw source columns look like across the three systems

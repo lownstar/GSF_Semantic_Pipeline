@@ -1,5 +1,5 @@
 """
-Gemstone Financial — Semantic Layer Bias Demo
+Gemstone Financial — Semantic Layer Demo
 =============================================
 Streamlit visualization for the four-tier Cortex Analyst variance study.
 
@@ -179,14 +179,14 @@ def _list_result_files() -> list[Path]:
 # ── Page config ────────────────────────────────────────────────────────────────
 
 st.set_page_config(
-    page_title="GSF — Semantic Layer Bias Demo",
+    page_title="GSF — Semantic Layer Demo",
     page_icon="💎",
     layout="wide",
 )
 
-st.title("💎 Gemstone Financial — Semantic Layer Bias Demo")
+st.title("💎 Gemstone Financial — Semantic Layer Demo")
 st.caption(
-    "Proving that a semantic layer is not optional convenience — it is a **bias control mechanism** "
+    "Proving that a semantic layer is not optional convenience — it is a **governance mechanism** "
     "for AI-generated results.  Four tiers: Bronze → Silver → Naive Gold → Semantic Gold."
 )
 

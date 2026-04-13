@@ -2,7 +2,7 @@
 -- GSF_DEMO Infrastructure Setup
 -- =============================================================================
 -- Creates the database, medallion schemas, compute warehouse, and demo role
--- for the Gemstone Financial semantic layer bias demonstration.
+-- for the Gemstone Financial Semantic Pipeline demonstration.
 --
 -- Run once per Snowflake account (idempotent — uses IF NOT EXISTS).
 -- Requires ACCOUNTADMIN or SYSADMIN with CREATE DATABASE privilege.
@@ -24,7 +24,7 @@ CREATE WAREHOUSE IF NOT EXISTS GSF_WH
 -- ── Database ──────────────────────────────────────────────────────────────────
 
 CREATE DATABASE IF NOT EXISTS GSF_DEMO
-    COMMENT = 'Gemstone Financial Demo — semantic layer bias study (Bronze/Silver/Gold)';
+    COMMENT = 'Gemstone Financial Demo — semantic pipeline (Bronze/Silver/Gold)';
 
 USE DATABASE GSF_DEMO;
 

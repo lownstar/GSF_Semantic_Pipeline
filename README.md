@@ -1,7 +1,7 @@
 # GSF Semantic Pipeline
 
 A portfolio demonstration proving that the Snowflake semantic layer is not an optional
-convenience — it is a **bias control mechanism** for AI-generated results.
+convenience — it is a **governance mechanism** for AI-generated results.
 
 Three synthetic legacy source systems (Topaz, Emerald, Ruby) each produce position data
 in their own physical schema with different identifiers, column names, price sources, and

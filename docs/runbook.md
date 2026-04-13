@@ -308,7 +308,7 @@ immediately without re-running Cortex.
 | Naive Gold | 0/11 (0%) | Well-structured dbt Gold layer but no semantic model — same confident failures as Silver |
 | Semantic Gold | 11/11 (100%) | Semantic model resolves all 11 ambiguities explicitly |
 
-The Silver and Naive Gold 0/11 scores are the demo's core argument: you cannot fix AI bias with better ETL alone.
+The Silver and Naive Gold 0/11 scores are the demo's core argument: you cannot fix AI-generated errors with better ETL alone.
 Governance at the semantic layer is the key variable.
 
 ---

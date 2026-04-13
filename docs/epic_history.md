@@ -109,7 +109,7 @@ Key design: every source file is derivable from canonical DW with deterministic 
 
 ---
 
-## Epic 6: AI Bias Analysis Tool
+## Epic 6: AI Results Analysis Tool
 
 **Status:** Deferred as a separate project. This project is designed with plug-in points
 (variance JSON output format) so Epic 6 can consume the results independently.
