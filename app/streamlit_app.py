@@ -195,6 +195,23 @@ st.caption(
 with st.sidebar:
     st.header("Controls")
 
+    st.subheader("Tiers to display")
+    show_bronze     = st.checkbox("Bronze (raw)",   value=False)
+    show_silver     = st.checkbox("Silver (naive)", value=True)
+    show_gold_naive = st.checkbox("Naive Gold",     value=True)
+    show_gold       = st.checkbox("Semantic Gold",  value=True)
+
+    VISIBLE_MODELS = [
+        m for m, show in [
+            ("bronze",     show_bronze),
+            ("silver",     show_silver),
+            ("gold_naive", show_gold_naive),
+            ("gold",       show_gold),
+        ]
+        if show
+    ]
+
+    st.divider()
     result_files = _list_result_files()
     if result_files:
         file_labels = [f.name for f in result_files]
@@ -255,9 +272,14 @@ summary = data.get("summary", {})
 questions = data.get("questions", [])
 total = summary.get("total_questions", len(questions))
 models_in_data = [m for m in ALL_MODELS if summary.get(f"{m}_correct") is not None]
+visible_models = [m for m in VISIBLE_MODELS if m in models_in_data]
 
-scorecard_cols = st.columns(max(len(models_in_data), 1))
-for idx, model in enumerate(models_in_data):
+if not visible_models:
+    st.info("Select at least one tier in the sidebar to display results.")
+    st.stop()
+
+scorecard_cols = st.columns(max(len(visible_models), 1))
+for idx, model in enumerate(visible_models):
     correct = summary.get(f"{model}_correct")
     pct = summary.get(f"{model}_accuracy_pct")
     with scorecard_cols[idx]:
@@ -315,9 +337,9 @@ def _build_summary_chart(questions: list[dict], models: list[str]) -> go.Figure:
     return fig
 
 
-if models_in_data:
+if visible_models:
     st.subheader("Result summary")
-    st.plotly_chart(_build_summary_chart(questions, models_in_data), use_container_width=True)
+    st.plotly_chart(_build_summary_chart(questions, visible_models), use_container_width=True)
     st.divider()
 
 # ── Comparison table ──────────────────────────────────────────────────────────
@@ -334,7 +356,7 @@ for q in questions:
 
     # Build compact status line for expander header
     status_parts = []
-    for m in models_in_data:
+    for m in visible_models:
         mdata = q.get(m) or {}
         status = mdata.get("status", "ERROR")
         status_parts.append(f"{_MODEL_LABELS[m]}: {_badge(status)}")
@@ -349,10 +371,10 @@ for q in questions:
         )
         st.divider()
 
-        n_cols = len(models_in_data)
+        n_cols = len(visible_models)
         cols = st.columns(n_cols) if n_cols > 0 else []
 
-        for idx, model in enumerate(models_in_data):
+        for idx, model in enumerate(visible_models):
             mdata = q.get(model) or {}
             status = mdata.get("status", "ERROR")
             value = mdata.get("value")
