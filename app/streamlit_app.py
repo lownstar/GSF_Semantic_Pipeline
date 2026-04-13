@@ -35,6 +35,8 @@ from variance.comparator import score
 from variance.ground_truth import compute_all
 from variance.questions import QUESTIONS
 
+_q_failure_modes = {q.id: q.failure_modes for q in QUESTIONS}
+
 _PROJECT_ROOT = Path(__file__).parent.parent
 _RESULTS_DIR = _PROJECT_ROOT / "variance" / "results"
 
@@ -384,10 +386,17 @@ for q in questions:
                 elif not error:
                     st.info("No rows returned.")
 
-        if q.get("failure_mode_silver"):
+        fm_map = _q_failure_modes.get(qid, {})
+        failing_with_fm = [
+            m for m in visible_models
+            if q.get(m, {}).get("status") in ("WRONG", "NO_DATA", "ERROR")
+            and fm_map.get(m)
+        ]
+        if failing_with_fm:
             st.divider()
-            st.markdown("**Why ungoverned layers fail here:**")
-            st.info(q["failure_mode_silver"])
+            for m in failing_with_fm:
+                st.markdown(f"**Why {_MODEL_LABELS[m]} fails here:**")
+                st.info(fm_map[m])
 
 st.divider()
 st.caption(

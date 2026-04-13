@@ -115,7 +115,7 @@ def run(models: list[str] = None, dry_run: bool = False) -> Path:
             "id": q.id,
             "question": q.natural_language,
             "ambiguity_codes": q.ambiguity_codes,
-            "failure_mode_silver": q.failure_mode_silver,
+            "failure_modes": q.failure_modes,
             "ground_truth_description": q.ground_truth_description,
             "result_type": q.result_type,
             "ground_truth": ground_truths[q.id],
