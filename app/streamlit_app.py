@@ -23,7 +23,6 @@ Run with:
 """
 
 import json
-import subprocess
 import sys
 from pathlib import Path
 
@@ -166,6 +165,9 @@ def _fmt_variance(variance, result_type: str, status: str) -> str:
 
 
 def _load_latest_results() -> dict | None:
+    demo = _RESULTS_DIR / "demo_results.json"
+    if demo.exists():
+        return json.loads(demo.read_text())
     json_files = sorted(_RESULTS_DIR.glob("*.json"), reverse=True)
     if not json_files:
         return None
@@ -221,34 +223,6 @@ with st.sidebar:
         st.caption(f"Run: {data.get('run_timestamp', '—')[:19].replace('T', ' ')} UTC")
     else:
         data = None
-
-    st.divider()
-    st.subheader("Re-run against Snowflake")
-    run_model = st.selectbox(
-        "Model(s)",
-        ["all", "gold", "silver", "gold_naive", "bronze",
-         "gold silver", "gold gold_naive"],
-        index=0,
-    )
-    if st.button("▶ Run now", type="primary", use_container_width=True):
-        cmd_models = run_model.split()
-        cmd = [sys.executable, str(_PROJECT_ROOT / "variance" / "runner.py"),
-               "--model"] + cmd_models
-        with st.spinner("Running variance comparison… (2–4 minutes per model)"):
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                cwd=str(_PROJECT_ROOT),
-            )
-        if result.returncode == 0:
-            st.success("Done — reload the page to see results.")
-            st.code(result.stdout[-2000:])
-        else:
-            st.error("Runner failed.")
-            st.code(result.stderr[-2000:])
 
     st.divider()
     st.subheader("Upload results file")

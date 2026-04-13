@@ -41,8 +41,8 @@ Three files are produced:
 
 2. Register the public key in Snowflake:
 ```sql
-ALTER USER DAVIDLOWE80NWL SET RSA_PUBLIC_KEY='<paste key body here>';
-DESC USER DAVIDLOWE80NWL;  -- verify RSA_PUBLIC_KEY_FP is non-null
+ALTER USER <your_username> SET RSA_PUBLIC_KEY='<paste key body here>';
+DESC USER <your_username>;  -- verify RSA_PUBLIC_KEY_FP is non-null
 ```
 
 3. Add both key vars to `.env`:
@@ -57,8 +57,8 @@ the same underlying key pair — just different encoding formats.
 
 **Notes:**
 - All three key files are gitignored — never commit them
-- `SNOWFLAKE_USER` must be `DAVIDLOWE80NWL` exactly (JWT is case-sensitive)
-- `SNOWFLAKE_ACCOUNT` must be `WYXTVOC-AEB50319` (regionless org-based format)
+- `SNOWFLAKE_USER` must exactly match the username you registered the key against (JWT is case-sensitive)
+- `SNOWFLAKE_ACCOUNT` must be in org-based format (`<orgname>-<accountname>`)
 - All `PUT` commands convert Windows backslashes to forward slashes automatically
 
 ### AWS Credentials (for S3 delivery — optional)
@@ -406,7 +406,7 @@ LIST @GSF_DEMO.GOLD.GSF_GOLD_STAGE/semantic/;
 ## SnowSQL Reference
 
 ```bash
-snowsql -a WYXTVOC-AEB50319 -u DAVIDLOWE80NWL -f infrastructure/snowflake_setup.sql
+snowsql -a <your-account> -u <your-username> -f infrastructure/snowflake_setup.sql
 ```
 
 Or configure `~/.snowsql/config` with account credentials.

@@ -39,3 +39,7 @@ dbt/.user.yml
 
 # Variance run results (reproducible via runner.py)
 variance/results/*.json
+!variance/results/demo_results.json
+
+# Internal Claude context (not for public repo)
+CLAUDE.md
