@@ -167,9 +167,11 @@ gsf-semantic-pipeline/
 │   ├── ground_truth.py     # Computes ground truth from seed CSVs (no Snowflake)
 │   ├── comparator.py       # CORRECT/WRONG/NO_DATA/ERROR scoring
 │   ├── runner.py           # Orchestrates 4-model run, saves timestamped JSON
-│   └── results/            # JSON output from each runner.py invocation
+│   ├── results/            # JSON output from each runner.py invocation
+│   │   └── demo_results.json  # Canonical showcase result (gold 11/11) — committed
 ├── app/                    # Phase 7: Streamlit visualization
-│   └── streamlit_app.py    # Scorecard, bar chart, per-question detail
+│   └── streamlit_app.py    # Four-tier scorecard; tier visibility toggles; tier-aware failure narratives
+├── requirements-app.txt    # Lightweight deps for Streamlit Community Cloud deployment
 ├── data/seed_v2/           # Generated CSVs (reproducible via generator_v2, seed=42)
 └── docs/                   # Project documentation
     ├── architecture.md          # Lifecycle phases, data flow, Snowflake objects
@@ -214,7 +216,7 @@ See [docs/ambiguity_registry_v2.md](docs/ambiguity_registry_v2.md) for full deta
 | Schema | `GSF_DEMO.GOLD` | Active |
 | Schema | `GSF_DEMO.GOLD_NAIVE` | Active |
 | Stage | `@BRONZE.GSF_BRONZE_STAGE` | Active (local loads) |
-| Stage | `@BRONZE.GSF_S3_LANDING` | Planned (Step 3 SQL, needs IAM setup) |
+| Stage | `@BRONZE.GSF_S3_LANDING` | Active (DDL in infrastructure/s3_external_stage.sql) |
 | Stage | `@GOLD.GSF_GOLD_STAGE` | Active (semantic YAMLs) |
 
 ---
@@ -230,4 +232,4 @@ See [docs/ambiguity_registry_v2.md](docs/ambiguity_registry_v2.md) for full deta
 | Phase 5: Gold Enrichment | Cortex Analyst YAML (staged to Snowflake internal stage) |
 | Phase 6: AI Querying | Snowflake Cortex Analyst (natural language → SQL) |
 | Phase 7: Analysis | Python + Streamlit |
-| Hosting | AWS (planned) |
+| Hosting | Streamlit Community Cloud (static mode — no live Snowflake) |

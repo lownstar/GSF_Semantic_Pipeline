@@ -2,6 +2,115 @@
 
 ---
 
+## Tier-Aware Failure Mode Narratives (2026-04-13)
+
+### Why
+
+With four tiers now toggleable in the Streamlit app, the single `failure_mode_silver`
+string was inaccurate when Bronze or Naive Gold were visible. A Bronze failure for Q01
+(account lookup) has nothing to do with Silver's POSITIONS_INTEGRATED — it fails because
+Bronze has no canonical account dimension at all. Gold_Naive fails differently again
+(account_ref is unresolved in the GROUP BY).
+
+### Files Updated
+
+| File | What changed |
+|---|---|
+| `variance/questions.py` | `failure_mode_silver: str` → `failure_modes: dict` with `bronze`, `silver`, `gold_naive` keys; all 11 questions updated |
+| `variance/runner.py` | Serializes `failure_modes` dict instead of `failure_mode_silver` |
+| `app/streamlit_app.py` | Builds `_q_failure_modes` lookup from live QUESTIONS list; per-tier `st.info` block shown only for visible failing tiers; heading reads "Why [Tier] fails here:" |
+
+### Behavior
+
+- Default view (Silver + Naive Gold + Gold): two failure blocks per question, one per
+  failing tier, with tier-specific explanations
+- Toggle Bronze on: third block appears with Bronze-specific reasoning
+- Show only Gold: no failure block (Gold answers correctly)
+
+---
+
+## Pre-Deployment Hardening (2026-04-13)
+
+### Why
+
+Preparing the repo for public GitHub exposure and Streamlit Community Cloud deployment.
+Goal: no personal identifiers, no live Snowflake dependency for the deployed app, minimal
+build footprint on Streamlit Cloud.
+
+### Files Updated
+
+| File | What changed |
+|---|---|
+| `CLAUDE.md` | Removed Snowflake account identifier and username |
+| `docs/runbook.md` | Replaced `DAVIDLOWE80NWL` with `<your_username>` (3 locations); replaced `WYXTVOC-AEB50319` with `<orgname>-<accountname>` (2 locations) |
+| `.gitignore` | Added `!variance/results/demo_results.json` (un-gitignore canonical file); added `CLAUDE.md` |
+| `variance/results/demo_results.json` | New committed file: canonical gold 11/11 showcase result |
+| `app/streamlit_app.py` | `_load_latest_results()` now prefers `demo_results.json`; removed live "Re-run against Snowflake" panel; removed `import subprocess` |
+| `requirements-app.txt` | New file: lightweight deps (streamlit, pandas, plotly, python-dotenv) for Streamlit Cloud — excludes dbt-snowflake and all pipeline deps |
+
+### Static Mode
+
+The deployed app requires no Snowflake credentials. It loads `demo_results.json`,
+re-scores it locally against seed CSVs, and renders the full four-tier scorecard.
+Fresh runner.py runs on local dev automatically pick up newer timestamped JSON files.
+
+---
+
+## Streamlit Tier Visibility Checkboxes (2026-04-13)
+
+### Why
+
+Bronze adds significant visual clutter — it fails all 11 questions for obvious reasons
+(raw, fragmented, no joins). The useful narrative contrast is Silver vs Naive Gold vs
+Semantic Gold. Bronze should be available but off by default.
+
+### Files Updated
+
+| File | What changed |
+|---|---|
+| `app/streamlit_app.py` | Sidebar "Tiers to display" section with four checkboxes; Bronze=False default, others=True; `VISIBLE_MODELS` list filters all scorecard, chart, and per-question rendering |
+
+### Behavior
+
+- Default: Silver (naive), Naive Gold, Semantic Gold visible
+- Bronze toggled on: all four tiers shown
+- Show only Gold: scorecard renders with one column, no failure blocks
+- Empty selection guard prevents crash when all tiers are hidden
+
+---
+
+## Governance Language Cleanup (2026-04-13)
+
+### Why
+
+"Bias" is a loaded term in AI/ML contexts — it implies a specific class of ML fairness
+problems rather than the data governance and correctness issues this demo illustrates.
+Replaced throughout with "governance", "correctness", and "ungoverned layers" framing.
+
+### Files Updated
+
+All display strings, page titles, comments, and docstrings using "bias" were replaced.
+Primary files: `app/streamlit_app.py`, semantic model YAML descriptions, `README.md`.
+
+---
+
+## Variance Runner Scoring Fixes (2026-04-11)
+
+### Why
+
+After the dw_position collapse (Gold 0/11 → 7/11), four questions remained wrong
+despite Gold having the correct data.
+
+| Question | Root Cause | Fix |
+|----------|-----------|-----|
+| Q06, Q10 | `result_type="row_count"` returns `len(rows)` but Cortex returns COUNT(*) as a 1-row aggregate — score was always 1 | Changed to `result_type="scalar"` |
+| Q08 | "total unrealized gain" caused Cortex to add a gains-only filter, excluding losses | Rephrased to "total unrealized gain/loss" |
+| Q09 | Cortex generated `SUM(SUM()) OVER ()` window function over filtered Fixed Income data only | Added `verified_query` with explicit CASE WHEN SQL to `positions_gold.yaml` |
+
+Final Gold score: 11/11.
+
+---
+
 ## dw_position: Collapse to 1 Canonical Row per Position (2026-04-11)
 
 ### Why
@@ -26,13 +135,15 @@ the Topaz-resolved row produces one canonical row at the correct grain.
 | `pipeline_semantic/validate_gold.py` | No change needed — Topaz-only still produces 4,886 rows (matches seed CSV) |
 | `pipeline_semantic/setup_gold.sql` | Remove source_system VARCHAR(10) from DW_POSITION DDL |
 
-### Expected Outcome
+### Actual Outcome
 
-After `dbt run`:
-- DW_POSITION: ~1,629 rows (was 4,886 = 3 × 1,629)
-- Q01 (ACC-0042 market value): ~$47.9M (was $143.8M = 3×)
-- Q03 (total market value): ~$6.1B (was $18.3B = 3×)
-- Gold score should rise from 0/11 to close to 11/11
+After `dbt run` (Topaz-only emit):
+- DW_POSITION: 4,886 rows — Topaz alone produces 4,886 rows, matching the seed CSV.
+  The original estimate (~1,629) assumed Topaz had 1,629 canonical positions × 3 lots,
+  but Topaz is already lot-level; the canonical position count and the lot count coincide.
+- Q01 (ACC-0042 market value): $47,944,909.80 (corrected from $143.8M = 3×)
+- Q03 (total market value): $6.1B (corrected from $18.3B = 3×)
+- Gold final score: **11/11** (after additional Q06/Q08/Q09/Q10 fixes — see scoring fixes below)
 
 ---
 

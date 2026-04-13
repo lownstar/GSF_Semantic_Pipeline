@@ -38,7 +38,7 @@ Cortex still gets it wrong — and what the semantic model adds."*
 | `semantic_model/` | 5-6 | Cortex Analyst YAMLs (all 4 tiers: bronze, silver, naive, gold) |
 | `cortex/` | 6 | Cortex Analyst REST API caller |
 | `variance/` | 7 | 11-question variance comparison (questions, ground truth, runner) |
-| `app/` | 7 | Streamlit visualization |
+| `app/` | 7 | Streamlit visualization (static mode: loads `variance/results/demo_results.json`) |
 
 ---
 
@@ -93,6 +93,10 @@ python pipeline_semantic/load_gold.py
 # Phase 6-7: Variance + visualization
 python variance/runner.py
 streamlit run app/streamlit_app.py
+
+# Streamlit deployment (Streamlit Community Cloud)
+# Point at requirements-app.txt in Cloud settings — does not include dbt-snowflake
+# App loads demo_results.json automatically (no Snowflake credentials needed)
 ```
 
 ---
