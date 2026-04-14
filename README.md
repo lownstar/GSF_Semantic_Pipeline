@@ -1,5 +1,8 @@
 # GSF Semantic Pipeline
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B)](https://gsfsemanticpipeline-lownstar.streamlit.app/)
+[![GitHub](https://img.shields.io/badge/GitHub-lownstar%2FGSF__Semantic__Pipeline-181717?logo=github)](https://github.com/lownstar/GSF_Semantic_Pipeline)
+
 A portfolio demonstration proving that the Snowflake semantic layer is not an optional
 convenience — it is a **governance mechanism** for AI-generated results.
 
