@@ -57,8 +57,7 @@ the difference.
 
 ## Refactoring Status
 
-This project is actively being refactored from proof-of-concept (Epics 1-5) to a
-portfolio-grade pipeline demo. See [docs/refactoring_changelog.md](docs/refactoring_changelog.md).
+All 6 refactoring steps complete. The pipeline is portfolio-ready and deployed to Streamlit Community Cloud. See [docs/refactoring_changelog.md](docs/refactoring_changelog.md) for the full change history.
 
 | Step | Description | Status |
 |---|---|---|

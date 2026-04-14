@@ -93,7 +93,7 @@ LEGACY SOURCE SYSTEMS (3 synthetic feeds, different schemas)
 | Schema | `GSF_DEMO.GOLD` | Active | Governed DW tables + semantic model |
 | Schema | `GSF_DEMO.GOLD_NAIVE` | Active | Assumption-based DW tables (dbt gold_naive models) |
 | Stage | `@BRONZE.GSF_BRONZE_STAGE` | Active | Internal stage for local Bronze CSV loads |
-| Stage | `@BRONZE.GSF_S3_LANDING` | Planned (Step 3 SQL) | External stage for S3 loads |
+| Stage | `@BRONZE.GSF_S3_LANDING` | Active | External stage for S3 loads |
 | Stage | `@GOLD.GSF_GOLD_STAGE` | Active | Internal stage for Gold loads + semantic YAMLs |
 
 ---

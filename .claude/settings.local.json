@@ -1,11 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find /c/Users/dlowe/Workspace/demoSemanticLayerBias/generator* -type d)",
-      "Bash(find /c/Users/dlowe/Workspace/demoSemanticLayerBias -type f -name *v2* -o -name *ambiguity*)",
+      "Bash(find /c/Users/dlowe/Workspace/GSF_Semantic_Pipeline/generator* -type d)",
+      "Bash(find /c/Users/dlowe/Workspace/GSF_Semantic_Pipeline -type f -name *v2* -o -name *ambiguity*)",
       "Bash(python -m generator_v2.generator --validate)",
-      "Bash(find /c/Users/dlowe/Workspace/demoSemanticLayerBias -type f -name *.yaml -o -type f -name *.yml)",
-      "Bash(wc -l \"c:\\\\Users\\\\dlowe\\\\Workspace\\\\demoSemanticLayerBias\\\\data\\\\seed_v2\"/*.csv)",
+      "Bash(find /c/Users/dlowe/Workspace/GSF_Semantic_Pipeline -type f -name *.yaml -o -type f -name *.yml)",
+      "Bash(wc -l \"c:\\\\Users\\\\dlowe\\\\Workspace\\\\GSF_Semantic_Pipeline\\\\data\\\\seed_v2\"/*.csv)",
       "Bash(python -m generator_v2.generator --output-dir data/seed_v2 --validate)",
       "Bash(python -c \":*)",
       "Read(//c/Users/dlowe/.claude/plans//**)",
@@ -14,10 +14,10 @@
       "WebFetch(domain:docs.snowflake.com)",
       "Read(//c/Users/dlowe/.claude/debug/**)",
       "Bash(grep -l \"\\\\[ERROR\\\\]\\\\|\\\\[WARN\\\\]\" C:/Users/dlowe/.claude/debug/*.txt)",
-      "Bash(find /c/Users/dlowe/Workspace/demoSemanticLayerBias -type f -not -path '*/__pycache__/*' -not -name '*.pyc' -exec ls -lh {})",
-      "Read(//c/Users/dlowe/Workspace/demoSemanticLayerBias/**)",
-      "Bash(du -sh /c/Users/dlowe/Workspace/demoSemanticLayerBias/*)",
-      "Bash(wc -l /c/Users/dlowe/Workspace/demoSemanticLayerBias/data/seed_v2/*.csv)"
+      "Bash(find /c/Users/dlowe/Workspace/GSF_Semantic_Pipeline -type f -not -path '*/__pycache__/*' -not -name '*.pyc' -exec ls -lh {})",
+      "Read(//c/Users/dlowe/Workspace/GSF_Semantic_Pipeline/**)",
+      "Bash(du -sh /c/Users/dlowe/Workspace/GSF_Semantic_Pipeline/*)",
+      "Bash(wc -l /c/Users/dlowe/Workspace/GSF_Semantic_Pipeline/data/seed_v2/*.csv)"
     ]
   }
 }
