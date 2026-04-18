@@ -1,26 +1,37 @@
 # =============================================================================
-# Gemstone Financial — Naive Gold Positions Model (ASSUMPTION-BASED)
+# Gemstone Financial — Naive Gold Positions Model (RUBY / BACK OFFICE)
 # =============================================================================
-# THIS IS THE NAIVE GOLD SEMANTIC MODEL.
+# THIS IS THE NAIVE GOLD SEMANTIC MODEL — a well-built Gold layer sourced from
+# Ruby, GSF's back office GL and fund accounting system.
 #
-# Exposes GOLD_NAIVE.POSITIONS_NAIVE — a Gold-looking aggregate table built
-# from Silver with five wrong assumptions applied during the dbt transform.
-# This model compounds those assumptions further by providing no guidance
-# on how to interpret the blended/inflated values.
+# Ruby is where GSF accounts are established (before they can be traded in the
+# front office system, Emerald) and reconciles against the custodian (Topaz Bank).
+# Treating Ruby as the source of record is a reasonable architectural decision.
 #
-# Residual ambiguities visible in this model:
-#   A2  (Price) — avg_price blends custodian EOD, PM evaluated, and NAV prices
-#   A3/A4 (Account) — account_ref is raw source format; canonical account_id absent
-#   A7  (Grain) — lot-level Topaz rows coexist with position-level rows; COUNT and cardinality queries break
-#   A9  (Cost basis) — total_cost_basis mixes three methods
-#   A11 (G/L NULLs) — total_unrealized_gl excludes Ruby rows (22% of positions)
+# Three tables: POSITIONS_NAIVE, ACCOUNTS_NAIVE, SECURITIES_NAIVE.
+# Canonical account IDs, all 200 securities, dimensional relationships, correct
+# position grain. This is what a well-intentioned DBA produces.
 #
-# Additionally, ~15% of positions (30 unmastered securities) were dropped
-# during the dbt transform and do not appear in this model at all (A8/A10).
+# Resolved:
+#   A3/A4 (Account)          — account_id is canonical; Ruby is account authority.
+#   A7  (Grain)              — Ruby is position-level; no lot-level inflation.
+#   A8/A10 (Securities)      — all 200 securities present via full security master.
 #
-# Cortex will produce confident SQL against this model. For ambiguity-sensitive
-# questions, results will be wrong — and in some cases worse than Silver because
-# the aggregation has permanently embedded the errors.
+# Residual ambiguities — fund accounting vs. custodian governance decisions:
+#   A2  (Price authority)    — avg_price is Ruby NAV; authoritative price is
+#                              Topaz custodian EOD (the daily reconciled price).
+#   A9  (Cost basis method)  — total_cost_basis is Ruby book cost; specific
+#                              identification (Topaz) is required for tax lots.
+#   A11 (Ruby G/L NULLs)    — total_unrealized_gl is NULL throughout; fund
+#                              accounting does not track mark-to-market G/L.
+#
+# Cortex will produce confident SQL against this model. Any query touching
+# valuation, unrealized P&L, or cost basis returns wrong or NULL results
+# because the semantic layer has not been told which system is authoritative
+# for each measurement type.
+#
+# Compare against positions_gold.yaml (Semantic Gold) to demonstrate
+# what the semantic model adds beyond a well-structured Gold layer.
 #
 # DEPLOYMENT
 # Staged to @GOLD.GSF_GOLD_STAGE/semantic/positions_gold_naive.yaml by load_gold.py.
@@ -28,52 +39,41 @@
 
 name: gsf_positions_gold_naive
 description: |
-  Aggregated Gold-tier position data from Gemstone Financial. Pre-aggregated from three source systems into a single positions table by security, account, and date. Contains market values, quantities, cost basis, and unrealized gain/loss. Note: approximately 15% of positions by security count were excluded during aggregation due to incomplete reference data.
+  Gold-tier position data for Gemstone Financial sourced from Ruby, the back office GL and fund accounting system. Three tables with relationships: positions, accounts, and securities. Canonical account IDs (Ruby is the account authority), all 200 securities, correct position grain. Note: Ruby uses fund accounting methodology — NAV pricing, book cost, and no mark-to-market unrealized G/L.
 tables:
   - name: positions_naive
     description: |
-      Gold positions aggregate. One row per security × account × position date × source system. Pre-computed totals for market value, quantity, cost basis, and unrealized gain/loss.
+      Gold positions from Ruby (back office GL). One row per security × account × position date — correct position grain (Ruby is not lot-level). Account IDs are canonical; all 200 securities are covered. Prices, cost basis, and G/L reflect fund accounting methodology.
     base_table:
       database: GSF_DEMO
       schema: GOLD_NAIVE
       table: POSITIONS_NAIVE
     dimensions:
+      - name: account_id
+        synonyms:
+          - account
+          - account number
+          - portfolio
+          - fund
+        description: Canonical account identifier (ACC-XXXX). Resolved across all three source systems.
+        expr: ACCOUNT_ID
+        data_type: TEXT
+        unique: false
       - name: security_master_id
         synonyms:
           - security
           - security id
           - security identifier
-        description: Security master identifier. Approximately 15% of securities are absent — those positions do not appear in this table.
+        description: Canonical security identifier. All 200 securities are covered.
         expr: SECURITY_MASTER_ID
         data_type: TEXT
         unique: false
-      - name: account_ref
-        synonyms:
-          - account
-          - fund
-          - portfolio
-        description: Account identifier in raw source format (C-XXXXXX, PORT-XXXX, or FND-XXXX depending on source system). Cannot be queried by canonical account ID (e.g., ACC-0042) without knowing the source system format.
-        expr: ACCOUNT_REF
-        data_type: TEXT
-        unique: false
-      - name: source_system
-        synonyms:
-          - source
-          - system
-        description: Source system (TOPAZ, EMERALD, or RUBY).
-        expr: SOURCE_SYSTEM
-        data_type: TEXT
-        unique: false
-        sample_values:
-          - TOPAZ
-          - EMERALD
-          - RUBY
       - name: asset_class
         synonyms:
           - asset type
           - sector
           - sleeve
-        description: Asset class. May be null for some rows.
+        description: Asset class of the security.
         expr: ASSET_CLASS
         data_type: TEXT
         unique: false
@@ -82,6 +82,8 @@ tables:
           - Fixed Income
           - Real Estate
           - Cash
+          - Commodities
+          - Alternatives
       - name: currency
         synonyms:
           - ccy
@@ -94,7 +96,7 @@ tables:
         synonyms:
           - as of date
           - date
-        description: Position date in source-system semantics (settlement, trade, or NAV date depending on source system).
+        description: Position date. Source systems use different date semantics (settlement, trade, or NAV date).
         expr: POSITION_DATE
         data_type: date
     facts:
@@ -104,7 +106,7 @@ tables:
           - MV
           - value
           - AUM
-        description: Sum of market value across source rows. Computed from blended prices (custodian EOD, PM evaluated, NAV) — not a single authoritative price source.
+        description: Market value computed from Ruby NAV price. Fund accounting NAV differs from Topaz custodian EOD (the authoritative reconciled price) by approximately ±0.5%.
         expr: TOTAL_MARKET_VALUE
         data_type: NUMBER
         default_aggregation: sum
@@ -114,7 +116,7 @@ tables:
           - shares held
           - quantity
           - units
-        description: Sum of quantity across source rows. Topaz lot-level rows are included without grain adjustment. Summing lots within Topaz is mathematically correct, but COUNT queries and cardinality assumptions break — a list query and a count query for the same question return different numbers with no error.
+        description: Sum of quantity. Topaz contributes lot-level rows; Emerald and Ruby contribute position-level rows. Summing across source systems inflates totals for Topaz securities.
         expr: TOTAL_QUANTITY
         data_type: NUMBER
         default_aggregation: sum
@@ -124,7 +126,7 @@ tables:
           - unrealized loss
           - unrealized P&L
           - unrealized PnL
-        description: Sum of unrealized gain/loss. Ruby rows (approximately 22% of positions) have no unrealized G/L and are excluded from this total.
+        description: Unrealized gain/loss. NULL for all positions — Ruby fund accounting does not track mark-to-market unrealized G/L. Any P&L or risk query against this field will return NULL or zero.
         expr: TOTAL_UNREALIZED_GL
         data_type: NUMBER
         default_aggregation: sum
@@ -133,7 +135,7 @@ tables:
           - cost basis
           - book value
           - cost
-        description: Sum of cost basis. Mixes three methods — specific lot cost (Topaz), average cost × quantity (Emerald), and book cost (Ruby). Not reconcilable across source systems.
+        description: Cost basis using Ruby book cost (fund accounting standard). Specific identification (Topaz lot cost) is required for tax lot reporting and performance attribution.
         expr: TOTAL_COST_BASIS
         data_type: NUMBER
         default_aggregation: sum
@@ -142,13 +144,154 @@ tables:
           - price
           - market price
           - unit price
-        description: Average price across source rows. Blends custodian EOD, PM evaluated (±0.3%), and NAV (±0.5%) prices. Not a single authoritative benchmark.
+        description: Price per unit from Ruby fund accounting (NAV methodology). Authoritative price is Topaz custodian EOD — the daily reconciled settlement price.
         expr: AVG_PRICE
         data_type: NUMBER
         default_aggregation: avg
     primary_key:
       columns:
+        - ACCOUNT_ID
         - SECURITY_MASTER_ID
-        - ACCOUNT_REF
-        - SOURCE_SYSTEM
         - POSITION_DATE
+
+  - name: accounts_naive
+    description: |
+      Account master for the Naive Gold layer. All 100 accounts with canonical account IDs and source-system key mappings.
+    base_table:
+      database: GSF_DEMO
+      schema: GOLD_NAIVE
+      table: ACCOUNTS_NAIVE
+    dimensions:
+      - name: account_id
+        synonyms:
+          - account
+          - account number
+          - account id
+        description: Canonical account identifier (ACC-XXXX).
+        expr: ACCOUNT_ID
+        data_type: TEXT
+        unique: true
+      - name: account_name
+        synonyms:
+          - name
+          - account name
+          - client
+        description: Full account name.
+        expr: ACCOUNT_NAME
+        data_type: TEXT
+        unique: false
+      - name: account_type
+        synonyms:
+          - type
+          - client type
+        description: Account type (Individual, Trust, etc.).
+        expr: ACCOUNT_TYPE
+        data_type: TEXT
+        unique: false
+      - name: base_currency
+        synonyms:
+          - currency
+          - ccy
+        description: Base currency for the account.
+        expr: BASE_CURRENCY
+        data_type: TEXT
+        unique: false
+    primary_key:
+      columns:
+        - ACCOUNT_ID
+
+  - name: securities_naive
+    description: |
+      Security master for the Naive Gold layer. All 200 securities with canonical security IDs, identifier types (CUSIP, ISIN, ticker), asset class, and security type.
+    base_table:
+      database: GSF_DEMO
+      schema: GOLD_NAIVE
+      table: SECURITIES_NAIVE
+    dimensions:
+      - name: security_id
+        synonyms:
+          - security
+          - security id
+          - security identifier
+        description: Canonical security identifier (SEC-XXXX).
+        expr: SECURITY_ID
+        data_type: TEXT
+        unique: true
+      - name: security_name
+        synonyms:
+          - name
+          - security name
+          - company
+          - issuer
+        description: Full security name.
+        expr: SECURITY_NAME
+        data_type: TEXT
+        unique: false
+      - name: asset_class
+        synonyms:
+          - asset type
+          - sector
+          - sleeve
+        description: Asset class (Equity, Fixed Income, Real Estate, Cash, Commodities, Alternatives).
+        expr: ASSET_CLASS
+        data_type: TEXT
+        unique: false
+        sample_values:
+          - Equity
+          - Fixed Income
+          - Real Estate
+          - Cash
+          - Commodities
+          - Alternatives
+      - name: security_type
+        synonyms:
+          - type
+          - instrument type
+        description: Security type (e.g., Common Stock, Corporate Bond, REIT).
+        expr: SECURITY_TYPE
+        data_type: TEXT
+        unique: false
+      - name: cusip
+        synonyms:
+          - cusip
+        description: CUSIP identifier.
+        expr: CUSIP
+        data_type: TEXT
+        unique: true
+      - name: isin
+        synonyms:
+          - isin
+        description: ISIN identifier.
+        expr: ISIN
+        data_type: TEXT
+        unique: true
+      - name: ticker
+        synonyms:
+          - ticker symbol
+          - symbol
+        description: Ticker symbol.
+        expr: TICKER
+        data_type: TEXT
+        unique: true
+    primary_key:
+      columns:
+        - SECURITY_ID
+
+relationships:
+  - name: positions_to_accounts
+    left_table: positions_naive
+    right_table: accounts_naive
+    relationship_columns:
+      - left_column: ACCOUNT_ID
+        right_column: ACCOUNT_ID
+    join_type: left_outer
+    relationship_type: many_to_one
+
+  - name: positions_to_securities
+    left_table: positions_naive
+    right_table: securities_naive
+    relationship_columns:
+      - left_column: SECURITY_MASTER_ID
+        right_column: SECURITY_ID
+    join_type: left_outer
+    relationship_type: many_to_one

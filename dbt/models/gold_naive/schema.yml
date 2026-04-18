@@ -1,35 +1,73 @@
 version: 2
 
 models:
+  - name: accounts_naive
+    description: >
+      Account lookup table for the Naive Gold layer. Direct pass-through of the
+      account_master_full seed — 100 accounts with canonical account_id and
+      source-system key mappings (custodian_account_num, portfolio_code, fund_code).
+      No transformation applied.
+    columns:
+      - name: account_id
+        description: Canonical account identifier (ACC-XXXX).
+        tests: [not_null, unique]
+      - name: account_name
+        description: Full account name.
+      - name: account_type
+        description: Account type (Individual, Trust, etc.).
+      - name: custodian_account_num
+        description: Topaz source key (C-XXXXXX).
+      - name: portfolio_code
+        description: Emerald source key (PORT-XXXX).
+      - name: fund_code
+        description: Ruby source key (FND-XXXX).
+
+  - name: securities_naive
+    description: >
+      Security lookup table for the Naive Gold layer. Direct pass-through of the
+      security_master_full seed — all 200 securities with canonical security_id,
+      CUSIP, ISIN, ticker, asset class, and security type. No transformation applied.
+    columns:
+      - name: security_id
+        description: Canonical security identifier (SEC-XXXX).
+        tests: [not_null, unique]
+      - name: security_name
+        description: Full security name.
+      - name: asset_class
+        description: Asset class (Equity, Fixed Income, Real Estate, Cash, Commodities, Alternatives).
+      - name: cusip
+        description: CUSIP identifier (Topaz source key).
+      - name: isin
+        description: ISIN identifier (Ruby source key).
+      - name: ticker
+        description: Ticker symbol (Emerald source key).
+
   - name: positions_naive
     description: >
       Assumption-based Gold positions table. Derived from SILVER.POSITIONS_INTEGRATED
-      with five wrong assumptions applied during aggregation. Looks like a valid Gold
-      aggregate — canonical column names, no obvious errors — but produces wrong answers
-      for all ambiguity-sensitive Cortex queries. In some cases worse than Silver because
-      the aggregation bakes the errors in permanently.
+      with account and security resolution applied, but four governance-sensitive
+      assumptions left unresolved. Looks like a well-built Gold aggregate — canonical
+      account IDs, all 200 securities, clean column names — but produces wrong answers
+      for price, grain, G/L, and cost basis queries.
 
-      Wrong assumptions:
-        1. All prices equivalent — blends custodian EOD, PM evaluated, and NAV prices.
-        2. Grain is uniform — Topaz lot-level rows coexist with position-level rows; COUNT
-           and cardinality queries are wrong, and row-level market value lookups return lot
-           fragments, not positions.
-        3. Unmastered rows dropped — WHERE security_master_id IS NOT NULL excludes ~15% of AUM.
-        4. NULL unrealized_gl propagated — Ruby rows (22%) excluded from G/L aggregations.
-        5. Account refs unresolved — raw source keys passed through; canonical account_id absent.
+      Resolved vs old positions_naive:
+        - A3/A4 (Account): account_id is canonical via accounts_naive join.
+        - A8/A10 (Securities): all 200 securities present via securities_naive join.
+
+      Still wrong (require governance decisions):
+        1. Price authority (A2): AVG(price) blends custodian EOD, PM evaluated, and NAV.
+        2. Grain (A7): Topaz lot-level rows coexist with position-level rows; COUNT breaks.
+        3. Cost basis method (A9): mixes specific lot, avg cost, and book cost.
+        4. Ruby G/L NULLs (A11): SUM(unrealized_gl) silently excludes 22% of rows.
     columns:
+      - name: account_id
+        description: >
+          Canonical account identifier (ACC-XXXX) — resolved via accounts_naive join.
+        tests: [not_null]
       - name: security_master_id
         description: >
-          Canonical security ID from the stub master. Only present for the 170 mastered
-          securities; 30 securities (~15% of positions) are excluded before this model runs.
-          AMBIGUITY A8/A10: those positions do not appear in any aggregation in this model.
-        tests: [not_null]
-      - name: account_ref
-        description: >
-          Account identifier in raw source format (C-XXXXXX / PORT-XXXX / FND-XXXX).
-          AMBIGUITY A3/A4: queries for a canonical account (e.g., ACC-0042) cannot be
-          resolved; Cortex must guess the correct source-system key.
-        tests: [not_null]
+          Canonical security ID from securities_naive (all 200 securities).
+          No positions are dropped for missing security master coverage.
       - name: source_system
         description: Source system (TOPAZ, EMERALD, RUBY).
         tests:
@@ -40,17 +78,15 @@ models:
         description: Position date in source-system semantics (settlement / trade / NAV).
         tests: [not_null]
       - name: asset_class
-        description: Asset class from stub. May be NULL for edge cases not caught by the WHERE filter.
+        description: Asset class from securities_naive. Present for all 200 securities.
       - name: avg_price
         description: >
           Average price across source rows. AMBIGUITY A2: blends three price methodologies
           (custodian EOD, PM ±0.3%, NAV ±0.5%). Not a valid benchmark price.
       - name: total_quantity
         description: >
-          Sum of raw source quantities. For Topaz, lot-level rows are summed (correct within
-          Topaz alone), but coexisting with position-level Emerald/Ruby rows means COUNT-based
-          and cardinality queries against the Silver input are unreliable. AMBIGUITY A7: grain
-          mismatch is invisible in the schema; this aggregate inherits Silver's structural flaw.
+          Sum of raw source quantities. AMBIGUITY A7: Topaz lot-level rows inflate this
+          total; COUNT-based and cardinality queries break silently.
       - name: total_market_value
         description: Sum of market_value. Computed from blended prices × inflated quantities.
       - name: total_unrealized_gl
