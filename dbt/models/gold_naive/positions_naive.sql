@@ -1,69 +1,73 @@
 -- =============================================================================
 -- Naive Gold Model: positions_naive
 -- =============================================================================
--- A "Gold-looking" positions table derived from Silver with wrong assumptions.
--- This is what a naive dbt pipeline produces when it promotes Silver to Gold
--- without resolving the underlying ambiguities. The table has canonical-looking
--- column names and no obvious NULL red flags — but it is demonstrably worse than
--- Silver for ambiguity-sensitive Cortex queries.
+-- A well-built Gold layer using Ruby (back office GL) as the authoritative
+-- source. Ruby is where GSF accounts are established before they can be traded
+-- in the front office (Emerald), and it reconciles against the custodian (Topaz).
+-- Treating it as the source of record is a reasonable assumption.
 --
--- Wrong assumptions applied:
---   1. All prices are equivalent — no source discrimination applied. Blended prices
---      from Topaz (EOD), Emerald (±0.3%), and Ruby (NAV ±0.5%) are treated as one.
---   2. Grain is uniform — Topaz lot-level rows are summed alongside Emerald/Ruby
---      position-level rows; COUNT and cardinality queries against the Silver input break.
---   3. NULL security_master_id rows are silently dropped — GROUP BY on security_master_id
---      excludes ~15% of positions, systematically understating AUM.
---   4. NULL unrealized_gl is propagated — Ruby G/L gaps are not computed; any
---      aggregation on unrealized_gl excludes 22% of rows silently.
---   5. Account reference is passed through raw — no canonical account_id resolution;
---      queries for a specific account must guess the source format.
+-- The model has everything a governed Gold layer should have:
+--   - Canonical account IDs via accounts_naive (accounts originate in Ruby)
+--   - All 200 securities via securities_naive
+--   - Correct position grain (Ruby is position-level, not lot-level)
+--   - Dimensional relationships to account and security tables
 --
--- Result: GOLD_NAIVE.POSITIONS_NAIVE — one row per security_master_id × position_date
---         × source_system. Looks like a valid Gold aggregate. Is not.
+-- It still produces wrong answers for governance-sensitive queries because
+-- Ruby is a fund accounting system, and fund accounting answers different
+-- questions than custodian or trade-system data:
+--
+--   A2  (Price authority)    — Ruby NAV ±0.5%; authoritative price is Topaz
+--                              custodian EOD (the reconciled settlement price).
+--   A9  (Cost basis method)  — Ruby uses book cost (fund accounting standard).
+--                              Specific identification (Topaz) is required for
+--                              tax lots and performance attribution.
+--   A11 (Ruby G/L NULLs)    — Fund accounting tracks no mark-to-market
+--                              unrealized G/L. Any P&L or risk query returns NULL.
+--
+-- Governance decisions a dbt model cannot make:
+--   "Which system's prices are authoritative for valuation?"
+--   "Which cost basis method applies for this reporting context?"
+--   "How do we compute G/L for a system that doesn't track it?"
+--
+-- Materialized as GOLD_NAIVE.POSITIONS_NAIVE.
 -- =============================================================================
 
 SELECT
-    -- Canonical-looking identifier — but only covers the 85% of mastered securities
-    security_master_id,
+    a.account_id,
+    s.security_id                       AS security_master_id,
+    pi.position_date,
+    s.asset_class,
+    pi.currency,
 
-    -- Account reference passed through raw (A3/A4 unresolved)
-    account_ref,
-    source_system,
-    position_date,
-    asset_class,
-    currency,
+    -- A2: Ruby NAV price (fund accounting). Authoritative price is Topaz custodian EOD.
+    pi.price                            AS avg_price,
 
-    -- Wrong assumption 1: treat all prices as equivalent, average across sources
-    -- This blends custodian EOD, PM evaluated, and NAV prices into one number
-    ROUND(AVG(price), 4)                AS avg_price,
+    -- Correct grain — Ruby reports one row per position (not lot-level like Topaz).
+    pi.quantity                         AS total_quantity,
 
-    -- Wrong assumption 2: sum quantities without grain adjustment
-    -- Topaz lot rows (2-3 per position) coexist with position-level rows; COUNT/cardinality queries break
-    SUM(quantity)                       AS total_quantity,
+    -- A2: market value computed from NAV price, not custodian EOD.
+    pi.market_value                     AS total_market_value,
 
-    -- Market value computed from blended prices × mixed-grain quantities
-    ROUND(SUM(market_value), 2)         AS total_market_value,
+    -- A11: NULL — fund accounting does not track mark-to-market unrealized G/L.
+    pi.unrealized_gl                    AS total_unrealized_gl,
 
-    -- Wrong assumption 4: propagate NULL unrealized_gl (Ruby rows excluded from SUM)
-    ROUND(SUM(unrealized_gl), 2)        AS total_unrealized_gl,
+    -- A9: book cost (fund accounting). Specific identification required for
+    --     tax lot reporting and performance attribution.
+    pi.cost_basis                       AS total_cost_basis,
 
-    -- Cost basis mixes three methods (specific lot / avg cost / book cost)
-    ROUND(SUM(cost_basis), 2)           AS total_cost_basis,
+    1                                   AS source_row_count
 
-    -- Row count for transparency
-    COUNT(*)                            AS source_row_count
+FROM {{ ref('positions_integrated') }} pi
 
-FROM {{ ref('positions_integrated') }}
+-- Ruby is the back office / GL system; accounts originate here.
+-- account_ref in Ruby is the fund_code (FND-XXXX).
+INNER JOIN {{ ref('accounts_naive') }} a
+    ON pi.source_system = 'RUBY'
+    AND pi.account_ref = a.fund_code
 
--- Wrong assumption 3: NULL security_master_id rows are dropped by this GROUP BY
--- ~15% of positions (30 unmastered securities) are silently excluded
-WHERE security_master_id IS NOT NULL
+-- Full 200-security master via ISIN (Ruby's identifier type).
+LEFT JOIN {{ ref('securities_naive') }} s
+    ON pi.security_ref_type = 'ISIN'
+    AND pi.security_ref = s.isin
 
-GROUP BY
-    security_master_id,
-    account_ref,
-    source_system,
-    position_date,
-    asset_class,
-    currency
+WHERE pi.source_system = 'RUBY'

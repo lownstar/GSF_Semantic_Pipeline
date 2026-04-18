@@ -42,6 +42,8 @@ _RESULTS_DIR = _PROJECT_ROOT / "variance" / "results"
 
 ALL_MODELS = ["bronze", "silver", "gold_naive", "gold"]
 
+FEATURED_QUESTIONS = ["Q01", "Q04", "Q06", "Q08", "Q10"]
+
 _MODEL_LABELS = {
     "bronze":     "Bronze (raw)",
     "silver":     "Silver (naive)",
@@ -216,6 +218,10 @@ with st.sidebar:
     ]
 
     st.divider()
+    spotlight_only = st.checkbox("Spotlight questions only", value=True,
+                                 help="Show the 5 highest-impact questions. Uncheck to see all 11.")
+
+    st.divider()
     result_files = _list_result_files()
     if result_files:
         file_labels = [f.name for f in result_files]
@@ -320,17 +326,14 @@ if visible_models:
 
 # ── Comparison table ──────────────────────────────────────────────────────────
 
-st.subheader("Question-by-question comparison")
-st.caption("Expand a row to see the generated SQL, results, and failure narrative.")
 
-for q in questions:
+def _render_question(q, visible_models):
     qid = q["id"]
     codes = ", ".join(q["ambiguity_codes"])
     question_short = q["question"][:70] + ("…" if len(q["question"]) > 70 else "")
     gt = q["ground_truth"]
     result_type = q["result_type"]
 
-    # Build compact status line for expander header
     status_parts = []
     for m in visible_models:
         mdata = q.get(m) or {}
@@ -397,6 +400,27 @@ for q in questions:
             for m in failing_with_fm:
                 st.markdown(f"**Why {_MODEL_LABELS[m]} fails here:**")
                 st.info(fm_map[m])
+
+
+if spotlight_only:
+    featured = [q for q in questions if q["id"] in FEATURED_QUESTIONS]
+    remaining = [q for q in questions if q["id"] not in FEATURED_QUESTIONS]
+
+    st.subheader("Spotlight: highest-impact questions")
+    st.caption("The 5 questions where a well-built Gold layer still fails. Expand a row to see generated SQL, results, and failure narrative.")
+    for q in featured:
+        _render_question(q, visible_models)
+
+    if remaining:
+        st.divider()
+        with st.expander(f"Show all {len(questions)} questions"):
+            for q in questions:
+                _render_question(q, visible_models)
+else:
+    st.subheader("Question-by-question comparison")
+    st.caption("Expand a row to see the generated SQL, results, and failure narrative.")
+    for q in questions:
+        _render_question(q, visible_models)
 
 st.divider()
 st.caption(
