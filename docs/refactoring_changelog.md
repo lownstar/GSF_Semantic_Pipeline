@@ -2,6 +2,49 @@
 
 ---
 
+## Naive Gold Rebuild + Spotlight UI (2026-04-18)
+
+### Why
+
+Two pieces of demo feedback:
+1. Naive Gold (0/11) looked indistinguishable from Silver — no contrast, no compelling story.
+2. Eleven questions overwhelmed viewers; the 3–5 highest-impact questions needed to surface first.
+
+### What changed
+
+**Naive Gold is now Ruby-authoritative.** Ruby is GSF's back office GL — the system where accounts
+originate before they can be traded in Emerald. Using Ruby as the Gold source is a reasonable architectural
+decision. The result is a genuine 3-table Gold layer that resolves all structural ambiguities and scores 7/11.
+The 4 it misses require governance decisions no dbt model makes: price authority (A2 — NAV vs custodian EOD),
+G/L completeness (A11 — fund accounting has no mark-to-market), and cost basis method (A9).
+
+**Spotlight mode** shows 5 high-impact questions by default; the rest are in a collapsed expander.
+
+### Files Updated
+
+| File | What changed |
+|---|---|
+| `dbt/models/gold_naive/accounts_naive.sql` | New — pass-through of account_master_full seed |
+| `dbt/models/gold_naive/securities_naive.sql` | New — pass-through of security_master_full seed |
+| `dbt/models/gold_naive/positions_naive.sql` | Rewritten — Ruby-only source, INNER JOIN to accounts_naive on fund_code, LEFT JOIN to securities_naive on ISIN; no aggregation needed (Ruby is position-level) |
+| `dbt/models/gold_naive/schema.yml` | Updated — reflects Ruby back-office narrative; documents resolved (A3/A4/A7/A8/A10) and residual (A2/A9/A11) ambiguities |
+| `semantic_model/positions_gold_naive.yaml` | Rewritten — expanded from 1-table to 3-table model with relationships; no verified_queries (intentional contrast with positions_gold.yaml's 7) |
+| `app/streamlit_app.py` | Added FEATURED_QUESTIONS constant + spotlight sidebar toggle + split question loop |
+| `variance/results/demo_results.json` | Regenerated from fresh variance run — Naive Gold 7/11 |
+
+### Score change
+
+| Tier | Before | After |
+|------|--------|-------|
+| Silver | 0/11 | 0/11 |
+| Naive Gold | 0/11 | **7/11 (64%)** |
+| Semantic Gold | 11/11 | 11/11 |
+
+Naive Gold correct: Q02, Q03, Q05, Q06, Q07, Q09, Q11 (structure, allocation, securities)
+Naive Gold fails: Q01 (price variance A2), Q04/Q08/Q10 (NULL G/L A11)
+
+---
+
 ## Tier-Aware Failure Mode Narratives (2026-04-13)
 
 ### Why

@@ -38,8 +38,8 @@ LEGACY SOURCE SYSTEMS
         v Phase 4: Silver Transform (shared)
   SILVER.POSITIONS_INTEGRATED — naive ETL union, looks normalized, semantically broken (A7-A11)
         |
-        +--- Naive Pipeline ---------> Phase 5: GOLD_NAIVE (assumption-based DW)
-        |                              Phase 6: Cortex Analyst -> confident but wrong
+        +--- Naive Pipeline ---------> Phase 5: GOLD_NAIVE (Ruby-authoritative 3-table Gold)
+        |                              Phase 6: Cortex Analyst -> 7/11 correct
         |
         +--- Semantic Enriched ------> Phase 5: GOLD (governed DW + semantic model YAML)
              Pipeline                  Phase 6: Cortex Analyst -> correct answers
@@ -49,9 +49,12 @@ LEGACY SOURCE SYSTEMS
 ```
 
 The core demo question: without semantic governance, can you trust even your Gold layer?
-The Naive Gold tables look like a proper star schema but carry Silver-layer integrity
-problems forward. The Semantic Enriched pipeline resolves them. Cortex Analyst shows
-the difference.
+
+Naive Gold is a well-built Ruby-authoritative Gold layer — canonical accounts, all 200 securities,
+correct position grain, 3-table semantic model. It gets 7/11 questions right. The four it misses
+require governance decisions no dbt model makes: *which system's prices are authoritative? how do you
+handle a fund accounting system that tracks no mark-to-market G/L?* The semantic model makes those
+decisions explicit — and that is what lifts the score from 7/11 to 11/11.
 
 ---
 
@@ -121,7 +124,8 @@ one-time infrastructure setup instructions.
 
 Gate question: *"What is the total market value of account ACC-0042?"*
 - Semantic Gold: George Group Trust / **$47,944,909.80** (correct)
-- Naive Gold / Silver / Bronze: wrong or no data (A4 — account ID fragmentation)
+- Naive Gold: wrong value — Ruby NAV price vs. custodian EOD (A2 — price authority)
+- Silver / Bronze: wrong or no data (A4 — account ID fragmentation)
 
 ---
 
@@ -145,7 +149,7 @@ gsf-semantic-pipeline/
 │   ├── models/
 │   │   ├── sources.yml     # Bronze source declarations
 │   │   ├── silver/         # SILVER.POSITIONS_INTEGRATED (22,160 rows)
-│   │   ├── gold_naive/     # GOLD_NAIVE.POSITIONS_NAIVE (assumption-based)
+│   │   ├── gold_naive/     # GOLD_NAIVE.POSITIONS_NAIVE / ACCOUNTS_NAIVE / SECURITIES_NAIVE (Ruby-authoritative)
 │   │   └── gold_semantic/  # GOLD.DW_ACCOUNT / DW_SECURITY / DW_POSITION / DW_TRADE_LOT
 │   ├── seeds/              # Canonical account + security masters (loaded to GOLD)
 │   └── macros/             # generate_schema_name.sql (exact schema name override)
@@ -170,9 +174,9 @@ gsf-semantic-pipeline/
 │   ├── comparator.py       # CORRECT/WRONG/NO_DATA/ERROR scoring
 │   ├── runner.py           # Orchestrates 4-model run, saves timestamped JSON
 │   ├── results/            # JSON output from each runner.py invocation
-│   │   └── demo_results.json  # Canonical showcase result (gold 11/11) — committed
+│   │   └── demo_results.json  # Canonical showcase result (Naive Gold 7/11, Semantic Gold 11/11) — committed
 ├── app/                    # Phase 7: Streamlit visualization
-│   └── streamlit_app.py    # Four-tier scorecard; tier visibility toggles; tier-aware failure narratives
+│   └── streamlit_app.py    # Four-tier scorecard; tier visibility toggles; spotlight mode (5 key questions); tier-aware failure narratives
 ├── requirements-app.txt    # Lightweight deps for Streamlit Community Cloud deployment
 ├── data/seed_v2/           # Generated CSVs (reproducible via generator_v2, seed=42)
 └── docs/                   # Project documentation

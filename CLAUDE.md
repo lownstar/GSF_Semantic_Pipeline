@@ -9,8 +9,9 @@ Four-tier comparison: **Bronze → Silver → Naive Gold → Semantic Gold**
 Cortex Analyst queries all four tiers. The semantic model is what separates correct answers
 from confident wrong answers — even at the Gold layer.
 
-**The narrative:** *"Your org already has a dbt pipeline producing a Gold layer. Here's why
-Cortex still gets it wrong — and what the semantic model adds."*
+**The narrative:** *"Your org already has a dbt pipeline producing a Gold layer — canonical accounts,
+all 200 securities, correct grain. Cortex gets 7/11 questions right. Here's why it still misses
+4 — and what the semantic model adds to reach 11/11."*
 
 **GitHub:** https://github.com/lownstar/GSF_Semantic_Pipeline
 
@@ -33,7 +34,7 @@ Cortex still gets it wrong — and what the semantic model adds."*
 | `delivery/` | 2 | S3 delivery module — boto3 upload to landing zone |
 | `pipeline_naive/` | 3 | Bronze ingest (load_bronze.py — PUT/COPY only) |
 | `pipeline_semantic/` | 5 | YAML staging only (load_gold.py — dbt owns table population) |
-| `dbt/` | 4-5 | dbt project — Silver, Naive Gold, Semantic Gold transforms |
+| `dbt/` | 4-5 | dbt project — Silver, Naive Gold (3 tables: POSITIONS_NAIVE/ACCOUNTS_NAIVE/SECURITIES_NAIVE), Semantic Gold transforms |
 | `infrastructure/` | 0 | One-time Snowflake + S3 setup SQL (run as ACCOUNTADMIN) |
 | `semantic_model/` | 5-6 | Cortex Analyst YAMLs (all 4 tiers: bronze, silver, naive, gold) |
 | `cortex/` | 6 | Cortex Analyst REST API caller |

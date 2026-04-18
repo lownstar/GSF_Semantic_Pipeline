@@ -12,10 +12,12 @@ generator_v2     boto3 -> S3      COPY INTO        dbt run          dbt run     
 
 Phases 1-4 are shared by both pipelines. Phase 5 is where they diverge:
 
-- **Naive Pipeline** builds `GOLD_NAIVE` using assumption-based dbt transforms — looks
-  like a star schema but carries Silver-layer integrity problems forward (A1-A11 unresolved)
+- **Naive Pipeline** builds `GOLD_NAIVE` from Ruby (back office GL) — canonical accounts,
+  all 200 securities, correct position grain. Fails only where fund accounting diverges from
+  custodian governance: price authority (A2), G/L completeness (A11), cost basis method (A9).
+  Scores 7/11 — the well-built Gold layer that still needs a semantic model.
 - **Semantic Enriched Pipeline** builds `GOLD` guided by the semantic model — structurally
-  and semantically correct, resolves all 11 ambiguities
+  and semantically correct, resolves all 11 ambiguities. Scores 11/11.
 
 The core argument: without semantic governance, you cannot trust *any* layer, not even Gold.
 
@@ -55,14 +57,14 @@ LEGACY SOURCE SYSTEMS (3 synthetic feeds, different schemas)
     Looks normalized. Semantically broken (A7-A11 embedded).
     Unmastered NULLs emerge from failed LEFT JOINs on the stub.
         |
-        +--- Naive Pipeline ----------------> [Phase 5: Gold — assumption-based]
-        |    GOLD_NAIVE.DW_POSITION           Picks first available security ID
-        |    GOLD_NAIVE.DW_ACCOUNT            Keeps raw source account refs
-        |    GOLD_NAIVE.DW_SECURITY           ~15% NULL security_master_id
-        |    GOLD_NAIVE.DW_TRADE_LOT          Mixed grain, blended cost basis
+        +--- Naive Pipeline ----------------> [Phase 5: Gold — Ruby-authoritative]
+        |    GOLD_NAIVE.POSITIONS_NAIVE        Ruby back-office GL; NAV price, NULL G/L, book cost
+        |    GOLD_NAIVE.ACCOUNTS_NAIVE         100 canonical accounts (Ruby fund_code mapping)
+        |    GOLD_NAIVE.SECURITIES_NAIVE       200 securities (full security master)
+        |    semantic_model/positions_gold_naive.yaml  3-table model; no verified_queries
         |                                      [Phase 6: Cortex Analyst]
-        |                                      queries GOLD_NAIVE via positions_silver.yaml
-        |                                      -> confident but wrong answers
+        |                                      queries GOLD_NAIVE via positions_gold_naive.yaml
+        |                                      -> correct on structure, fails valuation/G/L (7/11)
         |
         +--- Semantic Enriched Pipeline ----> [Phase 5: Gold — governed]
              GOLD.DW_POSITION                 Complete security master (200 rows)
@@ -91,7 +93,7 @@ LEGACY SOURCE SYSTEMS (3 synthetic feeds, different schemas)
 | Schema | `GSF_DEMO.BRONZE` | Active | Raw source tables (3 feeds + security stub) |
 | Schema | `GSF_DEMO.SILVER` | Active | Naive ETL output (POSITIONS_INTEGRATED) |
 | Schema | `GSF_DEMO.GOLD` | Active | Governed DW tables + semantic model |
-| Schema | `GSF_DEMO.GOLD_NAIVE` | Active | Assumption-based DW tables (dbt gold_naive models) |
+| Schema | `GSF_DEMO.GOLD_NAIVE` | Active | Ruby-authoritative Gold tables (POSITIONS_NAIVE, ACCOUNTS_NAIVE, SECURITIES_NAIVE) |
 | Stage | `@BRONZE.GSF_BRONZE_STAGE` | Active | Internal stage for local Bronze CSV loads |
 | Stage | `@BRONZE.GSF_S3_LANDING` | Active | External stage for S3 loads |
 | Stage | `@GOLD.GSF_GOLD_STAGE` | Active | Internal stage for Gold loads + semantic YAMLs |
@@ -107,6 +109,9 @@ LEGACY SOURCE SYSTEMS (3 synthetic feeds, different schemas)
 | BRONZE.RUBY_POSITIONS | 4,886 | Position-level (ISIN, fund_code) |
 | BRONZE.SECURITY_MASTER_STUB | 170 | 30 of 200 securities absent — produces A8/A10 NULLs |
 | SILVER.POSITIONS_INTEGRATED | 22,160 | Union of all 3 sources — A7-A11 embedded |
+| GOLD_NAIVE.ACCOUNTS_NAIVE | 100 | Canonical accounts (Ruby fund_code mapping, all source keys) |
+| GOLD_NAIVE.SECURITIES_NAIVE | 200 | Full security master (CUSIP/ISIN/ticker/asset_class) |
+| GOLD_NAIVE.POSITIONS_NAIVE | 4,886 | Ruby-only positions — correct grain, NAV price, NULL G/L |
 | GOLD.DW_ACCOUNT | 100 | Canonical accounts (all 3 source keys mapped) |
 | GOLD.DW_SECURITY | 200 | Complete master — zero gaps, zero NULL asset_class |
 | GOLD.DW_POSITION | 4,886 | Position-level grain — zero NULL unrealized_gain_loss |

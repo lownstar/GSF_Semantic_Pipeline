@@ -305,11 +305,12 @@ immediately without re-running Cortex.
 |------|-------|-----|
 | Bronze | 1/11 (9%) | Fragmented schemas — most questions unanswerable (no cross-source joins, no `account_id`) |
 | Silver | 0/11 (0%) | Looks integrated but A7-A11 embedded — returns plausible but wrong answers for all 11 questions |
-| Naive Gold | 0/11 (0%) | Well-structured dbt Gold layer but no semantic model — same confident failures as Silver |
+| Naive Gold | 7/11 (64%) | Ruby-authoritative 3-table Gold — correct on structure and allocation; fails on price authority (A2), G/L completeness (A11), cost basis method (A9) |
 | Semantic Gold | 11/11 (100%) | Semantic model resolves all 11 ambiguities explicitly |
 
-The Silver and Naive Gold 0/11 scores are the demo's core argument: you cannot fix AI-generated errors with better ETL alone.
-Governance at the semantic layer is the key variable.
+The demo's core argument: Naive Gold is a well-built Gold layer with canonical accounts, all 200 securities,
+and correct position grain — yet it still misses 4 questions that require governance decisions no dbt model
+makes. Price authority, G/L methodology, and cost basis method must be declared in the semantic layer.
 
 ---
 
