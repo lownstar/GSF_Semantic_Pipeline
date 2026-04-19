@@ -3,8 +3,8 @@
 -- =============================================================================
 -- Creates the four Bronze tables in GSF_DEMO.BRONZE:
 --
---   TOPAZ_POSITIONS        — custodian feed (lot-level, CUSIP, ACCT_NUM)
---   EMERALD_POSITIONS      — portfolio mgmt feed (position-level, ticker, portfolioId)
+--   TOPAZ_POSITIONS        — custodian feed (position-level, CUSIP, ACCT_NUM)
+--   EMERALD_POSITIONS      — front office / OMS feed (lot-level, ticker, portfolioId)
 --   RUBY_POSITIONS         — fund accounting feed (position-level, ISIN, fund_code)
 --   SECURITY_MASTER_STUB   — partial security master (170 of 200; 30 absent → A8/A10 NULLs)
 --
@@ -19,7 +19,7 @@ USE WAREHOUSE GSF_WH;
 USE DATABASE GSF_DEMO;
 
 -- ── Topaz Positions (custodian feed) ─────────────────────────────────────────
--- Grain: lot-level — one row per account × security × lot (Ambiguity A5).
+-- Grain: position-level — one row per account × security (Ambiguity A5).
 -- Security ID: CUSIP only (Ambiguity A1).
 -- Account ID: custodian account number, C-XXXXXX format (Ambiguity A3/A4).
 -- Price: custodian EOD closing price — the baseline (Ambiguity A2).
@@ -29,36 +29,36 @@ CREATE OR REPLACE TABLE BRONZE.TOPAZ_POSITIONS (
     ACCT_NUM    VARCHAR(20)     NOT NULL    COMMENT 'Custodian account number — Topaz source key (A4: no FK to Emerald/Ruby keys)',
     SEC_CUSIP   VARCHAR(9)      NOT NULL    COMMENT 'CUSIP — Topaz security identifier (A1: CUSIP only, no ISIN/ticker)',
     AS_OF_DT    DATE            NOT NULL    COMMENT 'Settlement/custody date (A6: differs from Emerald positionDate and Ruby nav_date)',
-    UNITS       DECIMAL(18,4)   NOT NULL    COMMENT 'Lot-level quantity — SUM() overcounts vs position-level sources (A5)',
+    UNITS       DECIMAL(18,4)   NOT NULL    COMMENT 'Position-level quantity — lots aggregated to one row per account × security (A5)',
     MKT_PRC     DECIMAL(18,4)   NOT NULL    COMMENT 'Custodian EOD closing price (A2: differs from Emerald PM evaluated and Ruby NAV price)',
     MKT_VAL     DECIMAL(18,2)   NOT NULL    COMMENT 'Market value = UNITS × MKT_PRC (A3: column name differs across sources)',
-    COST_BASIS  DECIMAL(18,2)   NOT NULL    COMMENT 'Specific lot cost — incompatible with Emerald avg cost and Ruby book cost (A9 precursor)',
+    COST_BASIS  DECIMAL(18,2)   NOT NULL    COMMENT 'Custodian cost basis — incompatible with Emerald lot cost and Ruby book cost (A9 precursor)',
     UNRLZD_GL   DECIMAL(18,2)   NOT NULL    COMMENT 'Unrealized gain/loss = MKT_VAL − COST_BASIS',
-    LOT_ID      VARCHAR(20)     NOT NULL    COMMENT 'Trade lot identifier — lot-level grain marker (A7 precursor: becomes record_id in integrated table)',
     CCY         VARCHAR(3)      NOT NULL    COMMENT 'ISO currency code'
 )
-COMMENT = 'Act 1 Bronze — Topaz custodian raw position feed. Lot-level grain (A5), CUSIP IDs (A1), custodian EOD price (A2).';
+COMMENT = 'Act 1 Bronze — Topaz custodian raw position feed. Position-level grain (A5), CUSIP IDs (A1), custodian EOD price (A2).';
 
 
--- ── Emerald Positions (portfolio management feed) ─────────────────────────────
--- Grain: position-level aggregate — one row per portfolio × security (Ambiguity A5).
+-- ── Emerald Positions (front office / OMS feed) ──────────────────────────────
+-- Grain: lot-level — one row per portfolio × security × lot (Ambiguity A5).
 -- Security ID: proprietary internal ticker (Ambiguity A1).
 -- Account ID: portfolio code, PORT-XXXX format (Ambiguity A3/A4).
 -- Price: PM evaluated price — custodian EOD ± 0.3% variance (Ambiguity A2).
 -- Date: POSITION_DATE — trade date (Ambiguity A6).
 
 CREATE OR REPLACE TABLE BRONZE.EMERALD_POSITIONS (
+    LOT_ID              VARCHAR(20)     NOT NULL    COMMENT 'Trade lot identifier — lot-level grain marker (A7 precursor: becomes record_id in integrated table)',
     PORTFOLIO_ID        VARCHAR(20)     NOT NULL    COMMENT 'Portfolio code — Emerald source key (A4: no FK to Topaz ACCT_NUM or Ruby FUND_CODE)',
     SECURITY_TICKER     VARCHAR(10)     NOT NULL    COMMENT 'Internal ticker — Emerald security identifier (A1: ticker only, no CUSIP/ISIN)',
     POSITION_DATE       DATE            NOT NULL    COMMENT 'Trade date / PM view date (A6: differs from Topaz AS_OF_DT and Ruby NAV_DATE)',
-    QUANTITY            DECIMAL(18,4)   NOT NULL    COMMENT 'Position-level quantity — lots collapsed (A5: no lot detail, SUM() safe within source)',
+    QUANTITY            DECIMAL(18,4)   NOT NULL    COMMENT 'Lot-level quantity — SUM() required to get position total (A5: lot detail present)',
     UNIT_PRICE          DECIMAL(18,4)   NOT NULL    COMMENT 'PM evaluated price (A2: differs from Topaz EOD and Ruby NAV)',
     MARKET_VALUE        DECIMAL(18,2)   NOT NULL    COMMENT 'Market value = QUANTITY × UNIT_PRICE (A3: named differently from Topaz MKT_VAL and Ruby TOTAL_NAV_VALUE)',
-    AVG_COST_BASIS      DECIMAL(18,4)   NOT NULL    COMMENT 'Average cost per unit — multiply by QUANTITY to get total cost (A9 precursor)',
+    LOT_COST_BASIS      DECIMAL(18,2)   NOT NULL    COMMENT 'Specific lot total cost — incompatible with Topaz custodian cost and Ruby book cost (A9 precursor)',
     UNREALIZED_PNL      DECIMAL(18,2)   NOT NULL    COMMENT 'Unrealized P&L based on PM evaluated price',
     CCY                 VARCHAR(3)      NOT NULL    COMMENT 'ISO currency code'
 )
-COMMENT = 'Act 1 Bronze — Emerald portfolio mgmt raw position feed. Position-level grain (A5), ticker IDs (A1), PM evaluated price (A2).';
+COMMENT = 'Act 1 Bronze — Emerald front office / OMS raw position feed. Lot-level grain (A5), ticker IDs (A1), PM evaluated price (A2).';
 
 
 -- ── Ruby Positions (fund accounting feed) ────────────────────────────────────
