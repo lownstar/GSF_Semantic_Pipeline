@@ -66,7 +66,7 @@ def _q04_gt(pos, sec, acc):
 def _q05_gt(pos, sec, acc):
     """Total quantity of Fixed Income securities across all portfolios.
 
-    POSITIONS_INTEGRATED contains Topaz lot-level rows alongside Emerald/Ruby
+    POSITIONS_INTEGRATED contains Emerald lot-level rows alongside Topaz/Ruby
     position-level rows. Ground truth is computed at position grain (lots collapsed),
     which is what the semantic Gold layer provides via DW_POSITION.
     """
@@ -269,25 +269,25 @@ QUESTIONS: list[Question] = [
         ambiguity_codes=["A5", "A7"],
         failure_modes={
             "bronze": (
-                "Topaz's Bronze table is lot-level (2-3 rows per position), while Emerald and "
+                "Emerald's Bronze table is lot-level (2-3 rows per position), while Topaz and "
                 "Ruby are position-level. Bronze provides no grain-normalization layer. Summing "
-                "quantity across all three sources overcounts Topaz positions by the lot-expansion "
+                "quantity across all three sources overcounts Emerald positions by the lot-expansion "
                 "factor — a Fixed Income quantity query against raw Bronze returns a total inflated "
-                "by 2-3× for the custodian-sourced positions."
+                "by 2-3× for the OMS-sourced positions."
             ),
             "silver": (
-                "POSITIONS_INTEGRATED contains Topaz lot-level rows (LOT-* record_ids) "
-                "alongside Emerald/Ruby position-level rows (POS-*, NAV-*). Grain is mixed "
-                "and invisible — COUNT queries overcount Topaz positions, and any query "
+                "POSITIONS_INTEGRATED contains Emerald lot-level rows (LOT-* record_ids) "
+                "alongside Topaz/Ruby position-level rows (POS-*, NAV-*). Grain is mixed "
+                "and invisible — COUNT queries overcount Emerald positions, and any query "
                 "treating one row as one position returns a lot fragment instead of the full "
                 "position value. The observable symptom: a list query and a count query for "
                 "the same question return different cardinalities with no error."
             ),
             "gold_naive": (
                 "POSITIONS_NAIVE.total_quantity uses SUM(quantity) without grain normalization. "
-                "Topaz lot-level rows (2-3 per position) are aggregated alongside Emerald/Ruby "
+                "Emerald lot-level rows (2-3 per position) are aggregated alongside Topaz/Ruby "
                 "position-level rows (1 per position). The result overstates Fixed Income quantity "
-                "by the average lot-expansion factor for Topaz-sourced securities."
+                "by the average lot-expansion factor for Emerald-sourced securities."
             ),
         },
         ground_truth_description="Total quantity of Fixed Income securities at position grain (DW_POSITION)",
@@ -359,20 +359,20 @@ QUESTIONS: list[Question] = [
         failure_modes={
             "bronze": (
                 "Topaz, Emerald, and Ruby each compute unrealized G/L using a different cost "
-                "basis method (specific lot identification, average cost, and book cost "
+                "basis method (custodian cost, specific lot identification, and book cost "
                 "respectively). Bronze exposes all three in separate tables with no "
                 "reconciliation. A cross-source sum of unrealized gains mixes three "
                 "incompatible accounting methods in a single number."
             ),
             "silver": (
                 "POSITIONS_INTEGRATED.cost_basis blends three incompatible accounting methods: "
-                "Topaz specific lot identification, Emerald average cost, and Ruby book cost. "
+                "Emerald specific lot identification, Topaz custodian cost, and Ruby book cost. "
                 "The computed unrealized gain is internally consistent but cannot be reconciled "
                 "to any system of record and would fail an audit."
             ),
             "gold_naive": (
                 "POSITIONS_NAIVE.total_unrealized_gl aggregates G/L from three sources using "
-                "incompatible cost basis methods: Topaz (specific lot), Emerald (average cost), "
+                "incompatible cost basis methods: Emerald (specific lot), Topaz (custodian cost), "
                 "Ruby (book cost). The sum is a single precise number, but it mixes three "
                 "accounting standards. Additionally, Ruby rows (22% of positions) are excluded "
                 "entirely due to NULL unrealized_gl."
@@ -449,15 +449,15 @@ QUESTIONS: list[Question] = [
             "bronze": (
                 "Three ambiguities compound: (A1) security identifiers are fragmented across "
                 "CUSIP, ticker, and ISIN with no shared key; (A4) account identifiers use source "
-                "system keys, not canonical IDs; (A9) cost_basis differs by source — Topaz uses "
-                "specific lot cost, Emerald uses average cost × quantity, Ruby uses book cost. A "
+                "system keys, not canonical IDs; (A9) cost_basis differs by source — Emerald uses "
+                "specific lot cost, Topaz uses custodian cost, Ruby uses book cost. A "
                 "cross-source Fixed Income cost basis query must resolve all three before "
                 "producing a meaningful number."
             ),
             "silver": (
                 "Compounds three ambiguities: (A1) security identifiers are fragmented across "
                 "CUSIP/ticker/ISIN with no shared key; (A4) account identifiers use source keys "
-                "not canonical account_id; (A9) cost_basis blends lot identification, average "
+                "not canonical account_id; (A9) cost_basis blends lot identification, custodian "
                 "cost, and book cost methods. The Silver answer is both incomplete and "
                 "methodologically unsound."
             ),
@@ -465,8 +465,8 @@ QUESTIONS: list[Question] = [
                 "Three ambiguities compound in POSITIONS_NAIVE: (A1) security joins require "
                 "security_master_id, silently dropping 15% of positions (including some Fixed "
                 "Income names); (A4) account_ref is a raw source key, making account-scoped cost "
-                "basis queries unreachable; (A9) total_cost_basis mixes specific lot cost (Topaz), "
-                "average cost × quantity (Emerald), and book cost (Ruby) — three incompatible "
+                "basis queries unreachable; (A9) total_cost_basis mixes specific lot cost (Emerald), "
+                "custodian cost (Topaz), and book cost (Ruby) — three incompatible "
                 "accounting methods in a single SUM."
             ),
         },
