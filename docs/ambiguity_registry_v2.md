@@ -183,30 +183,30 @@ produces a cartesian product.
 **Affected tables:**
 | Source | Grain | Notes |
 |---|---|---|
-| Topaz | Lot-level | One row per account × security × lot |
-| Emerald | Position-level | One row per account × security (lots collapsed) |
+| Topaz | Position-level | One row per account × security (daily net position) |
+| Emerald | Lot-level | One row per account × security × lot (OMS trade detail) |
 | Ruby | Position-level | One row per fund × security (lots collapsed) |
 
 **What the raw schema looks like:**
-Topaz has multiple rows per account × security combination (one per tax lot).
-Emerald and Ruby have one row per account × security with aggregated quantities.
+Emerald has multiple rows per account × security combination (one per trade lot).
+Topaz and Ruby have one row per account × security with aggregated quantities.
 No grain label exists in any source schema.
 
 **Why it's ambiguous:**
 If Cortex queries `SUM(quantity)` across all three sources for the same account and
-security, it will double- or triple-count Topaz lot rows against the already-aggregated
-Emerald and Ruby rows. The grain mismatch is invisible in the raw schema — all three
+security, it will double- or triple-count Emerald lot rows against the already-aggregated
+Topaz and Ruby rows. The grain mismatch is invisible in the raw schema — all three
 tables look like position tables, and `quantity` or its equivalent appears in all three.
 
 **What Cortex A gets wrong:**
 *"What is the total quantity held in Apple across all accounts?"* — Cortex sums
-`UNITS` from Topaz (lot-level, e.g., 3 lots × 100 shares = 300 rows contributing
-300 each) against `quantity` from Emerald (already summed to 300) and `shares_held`
+`quantity` from Emerald (lot-level, e.g., 3 lots × 100 shares = 300 rows contributing
+300 each) against `UNITS` from Topaz (already aggregated to 300) and `shares_held`
 from Ruby (already summed to 300). The result is 900 instead of 300.
 
 **What the semantic model defines (Env B):**
 - `DW_POSITION` — canonical position-level grain (lots collapsed)
-- `DW_TRADE_LOT` — canonical lot-level grain (Topaz source detail preserved)
+- `DW_TRADE_LOT` — canonical lot-level grain (Emerald OMS trade detail preserved)
 - Semantic model surfaces these as separate labeled contexts:
   - `position_quantity` — from `DW_POSITION`, safe for cross-source aggregation
   - `lot_quantity` — from `DW_TRADE_LOT`, explicitly scoped to lot-level analysis
@@ -264,8 +264,8 @@ spans three different effective dates presented as a single coherent snapshot.
 
 **What the integrated schema looks like:**
 The naive ETL assigns a `record_id` to every row:
-- Topaz rows: original lot ID (e.g., `LOT-0000001`) — one per tax lot
-- Emerald rows: fabricated composite key (e.g., `POS-PORT-0042-AAPL`) — one per position
+- Emerald rows: original lot ID (e.g., `LOT-0000001`) — one per trade lot
+- Topaz rows: fabricated composite key (e.g., `POS-C-000042-US0378331005`) — one per position
 - Ruby rows: fabricated composite key (e.g., `NAV-FND-0042-US037833100X`) — one per position
 
 All three formats are VARCHAR in the same column. There is no `grain` column. The
@@ -273,23 +273,23 @@ All three formats are VARCHAR in the same column. There is no `grain` column. Th
 will not filter on it.
 
 **Why it causes silent errors:**
-For any given account × security, Topaz contributes 2–4 lot rows (lot-level grain) while
-Emerald and Ruby each contribute exactly 1 row (position-level grain). Summing Topaz lots
+For any given account × security, Emerald contributes 2–4 lot rows (lot-level grain) while
+Topaz and Ruby each contribute exactly 1 row (position-level grain). Summing Emerald lots
 alone produces the correct position total (lots roll up correctly). What breaks is any
 query that does not explicitly account for grain:
 
-- **COUNT queries overcount**: `COUNT(*)` on Topaz positions returns lot count, not
+- **COUNT queries overcount**: `COUNT(*)` on Emerald positions returns lot count, not
   position count. A client with 3 AAPL lots counts as 3.
 - **Cardinality mismatches**: `SELECT DISTINCT account_ref WHERE security_ref = 'AAPL'`
   returns 47 rows; `SELECT COUNT(*) WHERE security_ref = 'AAPL'` returns 63. Both are
   "correct" SQL. Neither flags an error. The numbers don't reconcile.
 - **Row-level assumptions break**: Any consumer treating "one row = one position" (a
   report, an ETL, Cortex Analyst doing a single-row lookup) gets a lot fragment for
-  Topaz holdings instead of the full position value.
+  Emerald holdings instead of the full position value.
 
 **What Cortex A gets wrong:**
 *"How many clients hold Fixed Income securities?"*
-Cortex issues a COUNT without filtering on source_system or grain. Topaz lot rows
+Cortex issues a COUNT without filtering on source_system or grain. Emerald lot rows
 inflate the count. The error is not detectable from the result — it's a number, no
 warning. The parallel question — "list the clients holding Fixed Income" — returns a
 different row count, which is the observable symptom.

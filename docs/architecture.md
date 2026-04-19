@@ -31,8 +31,8 @@ it shows that a well-structured dbt Gold layer is still not enough without gover
 
 ```
 LEGACY SOURCE SYSTEMS (3 synthetic feeds, different schemas)
-  Topaz (Custodian)     — CUSIP, lot-level, custodian EOD price
-  Emerald (Portfolio)   — ticker, position-level, PM evaluated price
+  Topaz (Custodian)     — CUSIP, position-level, custodian EOD price
+  Emerald (Front Office/OMS) — ticker, lot-level, PM evaluated price
   Ruby (Fund Acctg)     — ISIN, position-level, NAV price
         |
         v [Phase 1: Generation]
@@ -46,8 +46,8 @@ LEGACY SOURCE SYSTEMS (3 synthetic feeds, different schemas)
     s3://gsf-demo-landing/reference/
         |
         v [Phase 3: Bronze Ingest]
-  BRONZE.TOPAZ_POSITIONS    (12,388 rows — CUSIP, lot-level)
-  BRONZE.EMERALD_POSITIONS  (4,886 rows  — ticker, position-level)
+  BRONZE.TOPAZ_POSITIONS    (4,886 rows  — CUSIP, position-level)
+  BRONZE.EMERALD_POSITIONS  (12,388 rows — ticker, lot-level)
   BRONZE.RUBY_POSITIONS     (4,886 rows  — ISIN, position-level)
   BRONZE.SECURITY_MASTER_STUB (170 rows — 30 securities absent, produces A8/A10 NULLs)
         |
@@ -104,8 +104,8 @@ LEGACY SOURCE SYSTEMS (3 synthetic feeds, different schemas)
 
 | Table | Rows | Notes |
 |---|---|---|
-| BRONZE.TOPAZ_POSITIONS | 12,388 | Lot-level (CUSIP, ACCT_NUM) |
-| BRONZE.EMERALD_POSITIONS | 4,886 | Position-level (ticker, portfolioId) |
+| BRONZE.TOPAZ_POSITIONS | 4,886 | Position-level (CUSIP, ACCT_NUM) |
+| BRONZE.EMERALD_POSITIONS | 12,388 | Lot-level (ticker, portfolioId, LOT_ID) |
 | BRONZE.RUBY_POSITIONS | 4,886 | Position-level (ISIN, fund_code) |
 | BRONZE.SECURITY_MASTER_STUB | 170 | 30 of 200 securities absent — produces A8/A10 NULLs |
 | SILVER.POSITIONS_INTEGRATED | 22,160 | Union of all 3 sources — A7-A11 embedded |
@@ -148,7 +148,7 @@ reads from this bucket via storage integration (see `infrastructure/s3_external_
 | A4 | Account ID fragmentation | Raw | No link between source account keys |
 | A5 | Position grain mismatch | Raw | Lot-level vs position-level mixed |
 | A6 | Date field semantics | Raw | Settlement/trade/NAV dates conflated |
-| A7 | Mixed-grain record IDs | Silver | LOT-* and POS-* coexist in one table |
+| A7 | Mixed-grain record IDs | Silver | LOT-* (Emerald) and POS-*/NAV-* coexist in one table |
 | A8 | Unmastered security IDs | Silver | ~15% NULL security_master_id |
 | A9 | Cost basis fragmentation | Silver | Lot/avg/book cost blended |
 | A10 | Asset class gap | Silver | ~15% NULL asset_class |

@@ -22,8 +22,8 @@ returns wrong answers, the other returns correct ones.
 
 ```
 LEGACY SOURCE SYSTEMS
-  Topaz (Custodian)     — CUSIP, lot-level, custodian EOD price
-  Emerald (Portfolio)   — ticker, position-level, PM evaluated price
+  Topaz (Custodian)     — CUSIP, position-level, custodian EOD price
+  Emerald (Front Office/OMS) — ticker, lot-level, PM evaluated price
   Ruby (Fund Acctg)     — ISIN, position-level, NAV price
         |
         v Phase 1: Generation
