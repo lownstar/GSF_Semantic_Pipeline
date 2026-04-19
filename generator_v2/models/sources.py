@@ -9,7 +9,7 @@ source system's conventions. The transformations are:
   - Security identifier substitution: security_id → CUSIP/ticker/ISIN (Ambiguity A1)
   - Account identifier substitution: account_id → ACCT_NUM/portfolioId/fund_code (A4)
   - Price variance noise (Ambiguity A2)
-  - Grain: Topaz is lot-level (from DW_TRADE_LOT), Emerald/Ruby are position-level (A5)
+  - Grain: Emerald is lot-level (from DW_TRADE_LOT), Topaz/Ruby are position-level (A5)
   - Date column name and semantic label differ per source (Ambiguity A6)
 
 See docs/ambiguity_registry_v2.md for full ambiguity documentation.
@@ -63,7 +63,6 @@ def _acct_lookup(dw_account: pd.DataFrame) -> dict:
 # ── Topaz ─────────────────────────────────────────────────────────────────────
 
 def generate_topaz_positions(
-    dw_trade_lot: pd.DataFrame,
     dw_position: pd.DataFrame,
     dw_account: pd.DataFrame,
     dw_security: pd.DataFrame,
@@ -72,7 +71,7 @@ def generate_topaz_positions(
     Topaz (custodian) position file.
 
     Physical schema: UPPERCASE abbreviated column names.
-    Grain: lot-level — one row per account × security × lot (Ambiguity A5).
+    Grain: position-level — one row per account × security (Ambiguity A5).
     Security identifier: CUSIP (Ambiguity A1).
     Account identifier: custodian account number (Ambiguity A3/A4).
     Date column: AS_OF_DT — represents settlement/custody date (Ambiguity A6).
@@ -82,27 +81,10 @@ def generate_topaz_positions(
     sec = _sec_lookup(dw_security)
     acct = _acct_lookup(dw_account)
 
-    # Build market price lookup from DW_POSITION (custodian baseline price)
-    price_map = dict(zip(
-        zip(dw_position["account_id"], dw_position["security_id"]),
-        dw_position["market_price"],
-    ))
-
     rows = []
-    for _, lot in dw_trade_lot.iterrows():
-        acct_id = lot["account_id"]
-        sec_id  = lot["security_id"]
-        key = (acct_id, sec_id)
-
-        if key not in price_map:
-            # Lot references a position not in DW_POSITION — skip (shouldn't happen)
-            continue
-
-        mkt_prc = price_map[key]
-        units   = lot["remaining_quantity"]
-        mkt_val = round(units * mkt_prc, 2)
-        cost    = lot["cost_basis"]
-        unrlzd  = round(mkt_val - cost, 2)
+    for _, pos in dw_position.iterrows():
+        acct_id = pos["account_id"]
+        sec_id  = pos["security_id"]
 
         rows.append({
             # Ambiguity A4 / A3: account identifier is custodian account number
@@ -111,14 +93,13 @@ def generate_topaz_positions(
             "SEC_CUSIP":  sec[sec_id]["cusip"],
             # Ambiguity A6: date is settlement/custody date
             "AS_OF_DT":   POSITION_DATE,
-            # Ambiguity A5: lot-level quantity
-            "UNITS":      units,
+            # Ambiguity A5: position-level quantity (lots aggregated)
+            "UNITS":      pos["quantity"],
             # Ambiguity A2: custodian EOD price (no variance)
-            "MKT_PRC":    mkt_prc,
-            "MKT_VAL":    mkt_val,
-            "COST_BASIS": round(cost, 2),
-            "UNRLZD_GL":  unrlzd,
-            "LOT_ID":     lot["lot_id"],
+            "MKT_PRC":    pos["market_price"],
+            "MKT_VAL":    pos["market_value"],
+            "COST_BASIS": round(pos["cost_basis"], 2),
+            "UNRLZD_GL":  round(pos["unrealized_gain_loss"], 2),
             "CCY":        dw_security.loc[
                               dw_security["security_id"] == sec_id, "currency"
                           ].iloc[0],
@@ -130,57 +111,70 @@ def generate_topaz_positions(
 # ── Emerald ───────────────────────────────────────────────────────────────────
 
 def generate_emerald_positions(
+    dw_trade_lot: pd.DataFrame,
     dw_position: pd.DataFrame,
     dw_account: pd.DataFrame,
     dw_security: pd.DataFrame,
 ) -> pd.DataFrame:
     """
-    Emerald (portfolio management system) position file.
+    Emerald (front office / OMS) position file.
 
     Physical schema: camelCase column names.
-    Grain: position-level aggregate — one row per account × security (Ambiguity A5).
+    Grain: lot-level — one row per account × security × lot (Ambiguity A5).
     Security identifier: proprietary internal ticker (Ambiguity A1).
     Account identifier: portfolio code (Ambiguity A3/A4).
     Date column: positionDate — represents trade date (Ambiguity A6).
     Price: PM evaluated price — custodian price ± EMERALD_PRICE_VARIANCE (A2).
-    Includes unrealized P&L (differs from Topaz due to price variance).
+    Each lot carries its own cost basis (specific lot cost, not average cost).
     """
     sec = _sec_lookup(dw_security)
     acct = _acct_lookup(dw_account)
 
+    # Build custodian baseline price lookup (apply variance on top)
+    price_map = dict(zip(
+        zip(dw_position["account_id"], dw_position["security_id"]),
+        dw_position["market_price"],
+    ))
+
     np_rng = np.random.default_rng(RANDOM_SEED + 10)
     rows = []
 
-    for _, pos in dw_position.iterrows():
-        acct_id = pos["account_id"]
-        sec_id  = pos["security_id"]
+    for _, lot in dw_trade_lot.iterrows():
+        acct_id = lot["account_id"]
+        sec_id  = lot["security_id"]
+        key = (acct_id, sec_id)
+
+        if key not in price_map:
+            continue
 
         # Ambiguity A2: PM evaluated price varies from custodian EOD
-        variance = np_rng.uniform(-EMERALD_PRICE_VARIANCE, EMERALD_PRICE_VARIANCE)
-        unit_price = round(pos["market_price"] * (1 + variance), 4)
-        quantity   = pos["quantity"]
+        variance   = np_rng.uniform(-EMERALD_PRICE_VARIANCE, EMERALD_PRICE_VARIANCE)
+        unit_price = round(price_map[key] * (1 + variance), 4)
+        quantity   = lot["remaining_quantity"]
         mkt_value  = round(quantity * unit_price, 2)
-        cost_basis = pos["cost_basis"]
-        avg_cost   = round(cost_basis / quantity, 4) if quantity else 0.0
-        unrlzd_pnl = round(mkt_value - cost_basis, 2)
+        lot_cost   = round(lot["cost_basis"], 2)
+        unrlzd_pnl = round(mkt_value - lot_cost, 2)
 
         currency = dw_security.loc[
             dw_security["security_id"] == sec_id, "currency"
         ].iloc[0]
 
         rows.append({
+            # Ambiguity A5: lot identifier — lot-level grain marker
+            "lotId":          lot["lot_id"],
             # Ambiguity A4 / A3: account identifier is portfolio code
             "portfolioId":    acct[acct_id]["portfolio_code"],
             # Ambiguity A1: security identified by ticker only
             "securityTicker": sec[sec_id]["ticker"],
             # Ambiguity A6: date is trade date (PM view)
             "positionDate":   POSITION_DATE,
-            # Ambiguity A5: position-level quantity (lots collapsed)
+            # Ambiguity A5: lot-level quantity
             "quantity":       quantity,
             # Ambiguity A2: PM evaluated price
             "unitPrice":      unit_price,
             "marketValue":    mkt_value,
-            "avgCostBasis":   avg_cost,
+            # Ambiguity A9: specific lot cost (not average cost)
+            "lotCostBasis":   lot_cost,
             "unrealizedPnL":  unrlzd_pnl,
             "ccy":            currency,
         })
@@ -301,8 +295,8 @@ def generate_integrated_positions(
       A11 — NULL unrealized G/L from Ruby: Ruby has no G/L concept, rows silently excluded
 
     Row counts:
-      Topaz:   len(dw_trade_lot) rows  (lot-level — A7 grain trap)
-      Emerald: len(dw_position) rows   (position-level)
+      Topaz:   len(dw_position) rows   (position-level)
+      Emerald: len(dw_trade_lot) rows  (lot-level — A7 grain trap)
       Ruby:    len(dw_position) rows   (position-level)
 
     Prices for Emerald/Ruby use the same RNG seeds as the standalone source files
@@ -329,11 +323,49 @@ def generate_integrated_positions(
     # ── Phase 1: Determine unmastered security set (A8 / A10) ─────────────────
     unmastered_ids = _get_unmastered_ids(dw_security)
 
-    # ── Phase 2: Topaz rows (lot-level) ───────────────────────────────────────
-    # A7: record_id = lot_id — grain is invisible in the integrated schema
+    # ── Phase 2: Topaz rows (position-level) ─────────────────────────────────
+    # A7: record_id = composite position key — position-level grain
     # A8/A10: security_master_id and asset_class are NULL for unmastered securities
-    # A9: cost_basis = specific lot cost (Topaz method)
+    # A9: cost_basis = position total cost (Topaz custodian method)
     topaz_rows = []
+    for _, pos in dw_position.iterrows():
+        acct_id = pos["account_id"]
+        sec_id  = pos["security_id"]
+
+        quantity  = pos["quantity"]
+        price     = pos["market_price"]                   # custodian EOD — no variance
+        mkt_value = pos["market_value"]
+        cost      = round(pos["cost_basis"], 2)
+        unrlzd    = round(pos["unrealized_gain_loss"], 2)
+
+        mastered           = sec_id not in unmastered_ids
+        custodian_acct_num = acct[acct_id]["custodian_account_num"]
+        cusip              = sec[sec_id]["cusip"]
+
+        topaz_rows.append({
+            "record_id":          f"POS-{custodian_acct_num}-{cusip}",  # A7: position ID
+            "source_system":      INTEGRATED_SOURCE_TOPAZ,
+            "account_ref":        custodian_acct_num,      # A4 survives
+            "security_ref":       cusip,                   # A1 survives (CUSIP)
+            "security_ref_type":  "CUSIP",
+            "security_master_id": sec_id if mastered else None,            # A8
+            "position_date":      POSITION_DATE,           # A6 survives (settlement date)
+            "quantity":           quantity,                 # position-level
+            "price":              price,                    # A2 survives (custodian EOD)
+            "market_value":       mkt_value,
+            "cost_basis":         cost,                     # A9: custodian cost
+            "unrealized_gl":      unrlzd,
+            "asset_class":        sec_meta[sec_id]["asset_class"] if mastered else None,  # A10
+            "currency":           sec_meta[sec_id]["currency"],
+            "etl_loaded_at":      "2025-01-02 06:00:00",   # Topaz batch loads at 06:00
+        })
+
+    # ── Phase 3: Emerald rows (lot-level) ────────────────────────────────────
+    # A7: record_id = lot_id — grain is invisible in the integrated schema
+    # A9: cost_basis = specific lot cost (Emerald OMS tracks per-trade cost)
+    # Price variance uses same seed as standalone generate_emerald_positions()
+    emerald_np_rng = np.random.default_rng(RANDOM_SEED + 10)
+    emerald_rows = []
     for _, lot in dw_trade_lot.iterrows():
         acct_id = lot["account_id"]
         sec_id  = lot["security_id"]
@@ -342,47 +374,11 @@ def generate_integrated_positions(
         if key not in price_map:
             continue  # skip orphaned lots (shouldn't happen with valid DW data)
 
-        quantity  = lot["remaining_quantity"]
-        price     = price_map[key]                        # custodian EOD — no variance
-        mkt_value = round(quantity * price, 2)
-        cost      = round(lot["cost_basis"], 2)
-        unrlzd    = round(mkt_value - cost, 2)
-
-        mastered = sec_id not in unmastered_ids
-
-        topaz_rows.append({
-            "record_id":          lot["lot_id"],          # A7: lot-level ID
-            "source_system":      INTEGRATED_SOURCE_TOPAZ,
-            "account_ref":        acct[acct_id]["custodian_account_num"],  # A4 survives
-            "security_ref":       sec[sec_id]["cusip"],   # A1 survives (CUSIP)
-            "security_ref_type":  "CUSIP",
-            "security_master_id": sec_id if mastered else None,            # A8
-            "position_date":      POSITION_DATE,          # A6 survives (settlement date)
-            "quantity":           quantity,                # A7: lot-level — trap for SUM
-            "price":              price,                   # A2 survives (custodian EOD)
-            "market_value":       mkt_value,
-            "cost_basis":         cost,                    # A9: specific lot cost
-            "unrealized_gl":      unrlzd,
-            "asset_class":        sec_meta[sec_id]["asset_class"] if mastered else None,  # A10
-            "currency":           sec_meta[sec_id]["currency"],
-            "etl_loaded_at":      "2025-01-02 06:00:00",  # Topaz batch loads at 06:00
-        })
-
-    # ── Phase 3: Emerald rows (position-level) ────────────────────────────────
-    # A7: record_id = fabricated composite key — looks structured, not a surrogate
-    # A9: cost_basis = position total cost (Emerald treats as average cost method)
-    # Price variance uses same seed as standalone generate_emerald_positions()
-    emerald_np_rng = np.random.default_rng(RANDOM_SEED + 10)
-    emerald_rows = []
-    for _, pos in dw_position.iterrows():
-        acct_id = pos["account_id"]
-        sec_id  = pos["security_id"]
-
         variance  = emerald_np_rng.uniform(-EMERALD_PRICE_VARIANCE, EMERALD_PRICE_VARIANCE)
-        price     = round(pos["market_price"] * (1 + variance), 4)  # A2: PM evaluated
-        quantity  = pos["quantity"]
+        price     = round(price_map[key] * (1 + variance), 4)  # A2: PM evaluated
+        quantity  = lot["remaining_quantity"]
         mkt_value = round(quantity * price, 2)
-        cost      = round(pos["cost_basis"], 2)            # A9: avg cost method
+        cost      = round(lot["cost_basis"], 2)            # A9: specific lot cost
         unrlzd    = round(mkt_value - cost, 2)
 
         portfolio_code = acct[acct_id]["portfolio_code"]
@@ -390,17 +386,17 @@ def generate_integrated_positions(
         mastered       = sec_id not in unmastered_ids
 
         emerald_rows.append({
-            "record_id":          f"POS-{portfolio_code}-{ticker}",  # A7: position ID
+            "record_id":          lot["lot_id"],           # A7: lot-level ID
             "source_system":      INTEGRATED_SOURCE_EMERALD,
             "account_ref":        portfolio_code,          # A4 survives (PORT-XXXX)
             "security_ref":       ticker,                  # A1 survives (ticker)
             "security_ref_type":  "TICKER",
             "security_master_id": sec_id if mastered else None,       # A8
             "position_date":      POSITION_DATE,           # A6 survives (trade date)
-            "quantity":           quantity,                 # position-level
+            "quantity":           quantity,                 # A7: lot-level — trap for SUM
             "price":              price,                    # A2: PM evaluated price
             "market_value":       mkt_value,
-            "cost_basis":         cost,                     # A9: average cost method
+            "cost_basis":         cost,                     # A9: specific lot cost
             "unrealized_gl":      unrlzd,
             "asset_class":        sec_meta[sec_id]["asset_class"] if mastered else None,  # A10
             "currency":           sec_meta[sec_id]["currency"],

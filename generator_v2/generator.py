@@ -10,8 +10,8 @@ Generates nine CSV files in data/seed_v2/:
     dw_position.csv     — position-level aggregates (canonical)
 
   Gemstone source system files (derived from DW with schema transformations):
-    positions_topaz.csv        — lot-level, CUSIP, ACCT_NUM, custodian EOD price
-    positions_emerald.csv      — position-level, ticker, portfolioId, PM evaluated price
+    positions_topaz.csv        — position-level, CUSIP, ACCT_NUM, custodian EOD price
+    positions_emerald.csv      — lot-level, ticker, portfolioId, PM evaluated price
     positions_ruby.csv         — position-level, ISIN, fund_code, NAV price
 
   Naive Pipeline artifacts:
@@ -83,8 +83,8 @@ def validate(
       V2  All DW_TRADE_LOT security_ids exist in DW_SECURITY
       V3  DW_POSITION quantity per account/security = sum of lot quantities
       V4  DW_POSITION market_value = quantity × market_price (within 1 cent)
-      V5  Topaz row count = DW_TRADE_LOT row count (lot-level 1:1)
-      V6  Emerald row count = DW_POSITION row count (position-level 1:1)
+      V5  Topaz row count = DW_POSITION row count (position-level 1:1)
+      V6  Emerald row count = DW_TRADE_LOT row count (lot-level 1:1)
       V7  Ruby row count = DW_POSITION row count (position-level 1:1)
       V8  Topaz CUSIPs all present in DW_SECURITY.cusip
       V9  Emerald tickers all present in DW_SECURITY.ticker
@@ -96,7 +96,7 @@ def validate(
       VI1 Integrated row count = Topaz + Emerald + Ruby rows (complete union)
       VI2 Integrated has ~UNMASTERED_SECURITY_FRACTION NULL security_master_ids
       VI3 All non-NULL security_master_ids exist in DW_SECURITY.security_id
-      VI4 For mastered securities, Topaz contributes ≥1 lot row and Emerald/Ruby
+      VI4 For mastered securities, Emerald contributes ≥1 lot row and Topaz/Ruby
           each contribute exactly 1 position row per account×security pair
       VI5 All Ruby rows in integrated have unrealized_gl = NaN/None (A11)
       VS1 Security master stub row count = NUM_SECURITIES − n_unmastered
@@ -136,13 +136,13 @@ def validate(
     if (mv_diff > 0.02).any():
         errors.append(f"V4 FAIL: {(mv_diff > 0.02).sum()} positions where market_value ≠ qty × price")
 
-    # V5 — Topaz is lot-level
-    if len(topaz) != len(dw_trade_lot):
-        errors.append(f"V5 FAIL: Topaz rows ({len(topaz)}) ≠ DW_TRADE_LOT rows ({len(dw_trade_lot)})")
+    # V5 — Topaz is position-level
+    if len(topaz) != len(dw_position):
+        errors.append(f"V5 FAIL: Topaz rows ({len(topaz)}) ≠ DW_POSITION rows ({len(dw_position)})")
 
-    # V6 — Emerald is position-level
-    if len(emerald) != len(dw_position):
-        errors.append(f"V6 FAIL: Emerald rows ({len(emerald)}) ≠ DW_POSITION rows ({len(dw_position)})")
+    # V6 — Emerald is lot-level
+    if len(emerald) != len(dw_trade_lot):
+        errors.append(f"V6 FAIL: Emerald rows ({len(emerald)}) ≠ DW_TRADE_LOT rows ({len(dw_trade_lot)})")
 
     # V7 — Ruby is position-level
     if len(ruby) != len(dw_position):
@@ -215,23 +215,21 @@ def validate(
         bad = integrated_master_ids - dw_sec_ids
         errors.append(f"VI3 FAIL: {len(bad)} security_master_id values not in DW_SECURITY")
 
-    # VI4 — for a mastered account×security pair, Topaz has ≥1 lot row and
-    #        Emerald/Ruby each have exactly 1 row
+    # VI4 — for a mastered account×security pair, Emerald has ≥1 lot row and
+    #        Topaz/Ruby each have exactly 1 position row
     topaz_int   = integrated[integrated["source_system"] == "TOPAZ"]
     emerald_int = integrated[integrated["source_system"] == "EMERALD"]
     ruby_int    = integrated[integrated["source_system"] == "RUBY"]
 
-    emerald_counts = emerald_int.groupby("security_master_id").size()
-    ruby_counts    = ruby_int.groupby("security_master_id").size()
+    topaz_counts = topaz_int.groupby("security_master_id").size()
 
-    # Emerald: each (security_master_id) should appear exactly len(accounts) times
-    # (one per account × security). We spot-check that no mastered security appears
-    # more rows in Emerald than DW_POSITION has rows for that security.
+    # Topaz: each mastered security should appear exactly DW_POSITION count times
+    # (one position row per account × security).
     dw_pos_per_sec = dw_position.groupby("security_id").size()
-    for sec_id, count in emerald_counts.items():
+    for sec_id, count in topaz_counts.items():
         if sec_id and sec_id in dw_pos_per_sec and count != dw_pos_per_sec[sec_id]:
             errors.append(
-                f"VI4 FAIL: Emerald integrated has {count} rows for {sec_id}, "
+                f"VI4 FAIL: Topaz integrated has {count} rows for {sec_id}, "
                 f"expected {dw_pos_per_sec[sec_id]}"
             )
             break  # report first mismatch only
@@ -291,8 +289,8 @@ def run(output_dir: str, run_validate: bool) -> None:
     dw_position  = generate_dw_position(dw_trade_lot, dw_security)
 
     print("Deriving gemstone source files...")
-    topaz   = generate_topaz_positions(dw_trade_lot, dw_position, dw_account, dw_security)
-    emerald = generate_emerald_positions(dw_position, dw_account, dw_security)
+    topaz   = generate_topaz_positions(dw_position, dw_account, dw_security)
+    emerald = generate_emerald_positions(dw_trade_lot, dw_position, dw_account, dw_security)
     ruby    = generate_ruby_positions(dw_position, dw_account, dw_security)
 
     print("Building Naive Pipeline artifacts...")
