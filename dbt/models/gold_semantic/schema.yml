@@ -52,9 +52,9 @@ models:
         A1  — security joined via canonical identifier per source
         A2  — Topaz market_price is custodian EOD (authoritative)
         A3/A4 — account joined via canonical account_id
-        A5/A7 — Topaz lots aggregated to position grain
+        A5/A7 — Emerald lots aggregated to position grain
         A8  — all 200 securities present; no dropped rows
-        A9  — Topaz specific-lot cost is the authoritative method (single method)
+        A9  — Topaz custodian cost is the authoritative method; Emerald specific-lot detail preserved in DW_TRADE_LOT
         A10 — asset_class available via dw_security join
         A11 — unrealized_gain_loss computed for all rows including Ruby
     columns:
@@ -80,8 +80,8 @@ models:
         tests: [not_null]
       - name: quantity
         description: >
-          Shares/units held at position grain. Topaz lots are summed per account × security.
-          Comparable to Emerald and Ruby position-level quantities. Resolves A7.
+          Shares/units held at position grain. Emerald lots are aggregated per account × security
+          in the dw_position CTE. Topaz is already position-level, directly comparable to Ruby. Resolves A7.
         tests: [not_null]
       - name: market_price
         description: >
@@ -91,8 +91,8 @@ models:
         description: Market value as reported by the source system.
       - name: cost_basis
         description: >
-          Sum of specific lot costs from DW_TRADE_LOT. Topaz specific-lot method
-          is used throughout — the single authoritative method. Resolves A9.
+          Topaz custodian cost — the single authoritative method for position-level
+          cost basis. Resolves A9.
       - name: unrealized_gain_loss
         description: >
           Unrealized gain/loss. Computed as market_value - cost_basis for Ruby rows
@@ -100,12 +100,12 @@ models:
         tests: [not_null]
   - name: dw_trade_lot
     description: >
-      Lot-level detail scoped exclusively to Topaz (the custodian system).
-      Topaz is the only source that tracks individual acquisition lots.
+      Lot-level detail scoped exclusively to Emerald (the front office OMS).
+      Emerald is the only source that tracks individual acquisition lots.
       Resolves A5/A7 by isolating lot grain to this table — position grain lives in dw_position.
     columns:
       - name: lot_id
-        description: Lot identifier from Topaz (LOT-NNNNNNN format). Primary key.
+        description: Lot identifier from Emerald (LOT-NNNNNNN format). Primary key.
         tests: [unique, not_null]
       - name: account_id
         description: Canonical account identifier. Foreign key to dw_account.
@@ -125,7 +125,7 @@ models:
         description: Units remaining in this lot.
         tests: [not_null]
       - name: cost_basis
-        description: Specific lot acquisition cost (Topaz method).
+        description: Specific lot acquisition cost (Emerald OMS method).
       - name: source_system
         description: Always EMERALD — lot-level data is exclusively from the front office OMS.
         tests:

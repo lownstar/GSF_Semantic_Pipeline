@@ -165,7 +165,7 @@ produced 3 rows per account × security × position_date — one per source syst
 Gold score: 0/11. Q01 (ACC-0042 market value) returned $143.8M vs ground truth $47.9M.
 
 Topaz is already the authoritative source for price, market_value, cost_basis, and
-quantity (custodian EOD, lot-level detail collapsed per the Topaz CTE). Emitting only
+quantity (custodian EOD, already position-level from Topaz). Emitting only
 the Topaz-resolved row produces one canonical row at the correct grain.
 
 ### Files Updated
@@ -183,7 +183,7 @@ the Topaz-resolved row produces one canonical row at the correct grain.
 After `dbt run` (Topaz-only emit):
 - DW_POSITION: 4,886 rows — Topaz alone produces 4,886 rows, matching the seed CSV.
   The original estimate (~1,629) assumed Topaz had 1,629 canonical positions × 3 lots,
-  but Topaz is already lot-level; the canonical position count and the lot count coincide.
+  but Topaz is position-level; the canonical position count and the Topaz row count coincide.
 - Q01 (ACC-0042 market value): $47,944,909.80 (corrected from $143.8M = 3×)
 - Q03 (total market value): $6.1B (corrected from $18.3B = 3×)
 - Gold final score: **11/11** (after additional Q06/Q08/Q09/Q10 fixes — see scoring fixes below)
@@ -196,10 +196,10 @@ After `dbt run` (Topaz-only emit):
 
 During a code walkthrough, the A7 (Mixed-Grain Record IDs) narrative was identified as
 technically incorrect. The prior framing — "summing quantity across all sources inflates
-Fixed Income totals by ~2-3x" — implies SUM() is broken. It is not: Topaz lots roll up
-correctly to the position total within Topaz. What A7 actually breaks is:
+Fixed Income totals by ~2-3x" — implies SUM() is broken. It is not: Emerald lots roll up
+correctly to the position total within Emerald. What A7 actually breaks is:
 
-- **COUNT queries**: `COUNT(*)` counts lots as positions for Topaz accounts
+- **COUNT queries**: `COUNT(*)` counts lots as positions for Emerald accounts
 - **Cardinality mismatches**: a list query ("which clients hold AAPL?") and a count
   query ("how many clients hold AAPL?") return different row counts against Silver with
   no error — the numbers simply don't reconcile
@@ -220,7 +220,7 @@ correctly to the position total within Topaz. What A7 actually breaks is:
 
 ### Canonical A7 narrative going forward
 
-> *"Grain mismatch is invisible in the schema. COUNT queries overcount Topaz lot rows
+> *"Grain mismatch is invisible in the schema. COUNT queries overcount Emerald lot rows
 > as positions. The observable symptom: ask the same question as a list and as a count
 > — you get different numbers, with no error."*
 
@@ -346,7 +346,7 @@ Here's why Cortex still gets it wrong — and what the semantic model adds."*
 | `dbt/models/gold_semantic/dw_account.sql` | Canonical account dimension (from seed) |
 | `dbt/models/gold_semantic/dw_security.sql` | Full 200-row security master (from seed) |
 | `dbt/models/gold_semantic/dw_position.sql` | Governed position fact (all ambiguities resolved) |
-| `dbt/models/gold_semantic/dw_trade_lot.sql` | Lot-level detail (Topaz only) |
+| `dbt/models/gold_semantic/dw_trade_lot.sql` | Lot-level detail (Emerald only) |
 | `dbt/models/gold_semantic/schema.yml` | Gold column docs + FK/PK tests (replaces validate_gold.py) |
 | `semantic_model/positions_bronze.yaml` | Cortex Analyst model for Bronze tier (thin, 3 tables) |
 | `semantic_model/positions_gold_naive.yaml` | Cortex Analyst model for Naive Gold tier |

@@ -11,8 +11,8 @@ models:
     columns:
       - name: record_id
         description: >
-          Mixed-grain identifier. LOT-NNNNNNN for Topaz (lot-level), composite
-          POS-{portfolio}-{ticker} for Emerald, NAV-{fund}-{isin} for Ruby.
+          Mixed-grain identifier. LOT-NNNNNNN for Emerald (lot-level), composite
+          POS-{cusip}-{acct} for Topaz, NAV-{fund}-{isin} for Ruby.
           AMBIGUITY A7: grain is invisible from the column values alone.
         tests: [not_null]
       - name: source_system
@@ -51,9 +51,9 @@ models:
         tests: [not_null]
       - name: quantity
         description: >
-          Shares/units held. Lot-level for Topaz (~2-3 lots per position on average),
-          position-level for Emerald and Ruby. AMBIGUITY A7: grain is mixed and invisible —
-          COUNT(*) overcounts Topaz positions, and row-level assumptions (e.g., a single-row
+          Shares/units held. Lot-level for Emerald (~2-3 lots per position on average),
+          position-level for Topaz and Ruby. AMBIGUITY A7: grain is mixed and invisible —
+          COUNT(*) overcounts Emerald positions, and row-level assumptions (e.g., a single-row
           lookup for market value) return a lot fragment, not the full position.
         tests: [not_null]
       - name: price
@@ -69,7 +69,7 @@ models:
         tests: [not_null]
       - name: cost_basis
         description: >
-          Cost basis. Specific lot cost (Topaz), avg_cost × qty (Emerald), book cost
+          Cost basis. Specific lot cost (Emerald), custodian cost (Topaz), book cost
           (Ruby). AMBIGUITY A9: three methods produce different values for the same
           economic position; totals are not reconcilable.
       - name: unrealized_gl

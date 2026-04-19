@@ -56,7 +56,7 @@ models:
 
       Still wrong (require governance decisions):
         1. Price authority (A2): AVG(price) blends custodian EOD, PM evaluated, and NAV.
-        2. Grain (A7): Topaz lot-level rows coexist with position-level rows; COUNT breaks.
+        2. Grain (A7): Emerald lot-level rows coexist with position-level rows; COUNT breaks.
         3. Cost basis method (A9): mixes specific lot, avg cost, and book cost.
         4. Ruby G/L NULLs (A11): SUM(unrealized_gl) silently excludes 22% of rows.
     columns:
@@ -79,7 +79,7 @@ models:
           (custodian EOD, PM ±0.3%, NAV ±0.5%). Not a valid benchmark price.
       - name: total_quantity
         description: >
-          Sum of raw source quantities. AMBIGUITY A7: Topaz lot-level rows inflate this
+          Sum of raw source quantities. AMBIGUITY A7: Emerald lot-level rows inflate this
           total; COUNT-based and cardinality queries break silently.
       - name: total_market_value
         description: Sum of market_value. Computed from blended prices × inflated quantities.
@@ -89,8 +89,8 @@ models:
           SUM excludes them silently. Result is systematically understated by ~22%.
       - name: total_cost_basis
         description: >
-          Sum of cost_basis. AMBIGUITY A9: mixes specific lot cost (Topaz), avg cost
-          (Emerald), and book cost (Ruby). Not reconcilable.
+          Sum of cost_basis. AMBIGUITY A9: mixes specific lot cost (Emerald), custodian
+          cost (Topaz), and book cost (Ruby). Not reconcilable.
       - name: source_row_count
         description: Number of Silver rows that contributed to this aggregate.
         tests: [not_null]

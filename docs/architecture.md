@@ -124,9 +124,9 @@ LEGACY SOURCE SYSTEMS (3 synthetic feeds, different schemas)
 ```
 s3://gsf-demo-landing/
 ├── topaz/
-│   └── positions_topaz.csv        (12,388 rows — Topaz custodian feed)
+│   └── positions_topaz.csv         (4,886 rows — Topaz custodian feed)
 ├── emerald/
-│   └── positions_emerald.csv      (4,886 rows  — Emerald PM feed)
+│   └── positions_emerald.csv      (12,388 rows — Emerald PM feed)
 ├── ruby/
 │   └── positions_ruby.csv         (4,886 rows  — Ruby fund accounting feed)
 └── reference/

@@ -348,8 +348,8 @@ maps all three to a single `cost_basis` column:
 
 | Source | Original column | Accounting method |
 |---|---|---|
-| Topaz | `COST_BASIS` | Specific identification: acquisition price × remaining lot quantity |
-| Emerald | `avgCostBasis × quantity` | Average cost method: total cost ÷ shares, applied to current quantity |
+| Topaz | `COST_BASIS` | Custodian cost: position-level cost as reported by the custodian |
+| Emerald | `LOT_COST_BASIS` | Specific identification: total acquisition cost per trade lot |
 | Ruby | `book_cost` | Book cost: original acquisition cost, not adjusted for partial redemptions |
 
 All three methods produce different numbers for the same holding. The column name
@@ -357,8 +357,8 @@ All three methods produce different numbers for the same holding. The column nam
 
 **Why it's realistic:**
 These are the three cost accounting methods actually used in financial services:
-- Custody systems (Topaz): lot-level FIFO or specific identification
-- Portfolio management systems (Emerald): average cost
+- Custody systems (Topaz): position-level custodian cost (net settled position)
+- Portfolio management systems (Emerald): specific lot identification (OMS trade records)
 - Fund accounting (Ruby): book cost per GAAP/IFRS
 
 **What Cortex A gets wrong:**

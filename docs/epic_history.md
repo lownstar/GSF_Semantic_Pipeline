@@ -18,8 +18,8 @@ This document preserves the detailed task breakdowns and validation results.
 - DW_TRADE_LOT: lot_id, account_id, security_id, acquisition_date, acquisition_price, original_quantity, remaining_quantity, cost_basis
 
 ### 1b. Source System Schemas
-- **Topaz** (custodian): CUSIP, ACCT_NUM, lot-level grain, custodian EOD price
-- **Emerald** (portfolio mgmt): ticker, portfolioId, position-level grain, PM evaluated price
+- **Topaz** (custodian): CUSIP, ACCT_NUM, position-level grain, custodian EOD price
+- **Emerald** (portfolio mgmt): ticker, portfolioId, lot-level grain, PM evaluated price
 - **Ruby** (fund accounting): ISIN, fund_code, position-level grain, NAV price
 
 ### 1c. Cross-Source Ambiguity Registry
@@ -36,7 +36,7 @@ Key design: every source file is derivable from canonical DW with deterministic 
 **Status:** Complete (2026-03-27)
 **Validation:** `validate_silver.py` passed SC1-SC9
 
-**Row counts:** TOPAZ=12,388 / EMERALD=4,886 / RUBY=4,886 / STUB=170 / INTEGRATED=22,160
+**Row counts:** TOPAZ=4,886 / EMERALD=12,388 / RUBY=4,886 / STUB=170 / INTEGRATED=22,160
 
 **Silver NULL fractions (ambiguities encoded):**
 - SECURITY_MASTER_ID IS NULL (A8): ~15%

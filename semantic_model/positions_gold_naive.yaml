@@ -21,7 +21,7 @@
 #   A2  (Price authority)    — avg_price is Ruby NAV; authoritative price is
 #                              Topaz custodian EOD (the daily reconciled price).
 #   A9  (Cost basis method)  — total_cost_basis is Ruby book cost; specific
-#                              identification (Topaz) is required for tax lots.
+#                              identification (Emerald) is required for tax lots.
 #   A11 (Ruby G/L NULLs)    — total_unrealized_gl is NULL throughout; fund
 #                              accounting does not track mark-to-market G/L.
 #
@@ -116,7 +116,7 @@ tables:
           - shares held
           - quantity
           - units
-        description: Sum of quantity. Topaz contributes lot-level rows; Emerald and Ruby contribute position-level rows. Summing across source systems inflates totals for Topaz securities.
+        description: Sum of quantity. Emerald contributes lot-level rows; Topaz and Ruby contribute position-level rows. Summing across source systems inflates totals for Emerald securities.
         expr: TOTAL_QUANTITY
         data_type: NUMBER
         default_aggregation: sum
@@ -135,7 +135,7 @@ tables:
           - cost basis
           - book value
           - cost
-        description: Cost basis using Ruby book cost (fund accounting standard). Specific identification (Topaz lot cost) is required for tax lot reporting and performance attribution.
+        description: Cost basis using Ruby book cost (fund accounting standard). Specific identification (Emerald lot cost) is required for tax lot reporting and performance attribution.
         expr: TOTAL_COST_BASIS
         data_type: NUMBER
         default_aggregation: sum

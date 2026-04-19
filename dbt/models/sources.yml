@@ -6,9 +6,9 @@ sources:
     schema: BRONZE
     tables:
       - name: topaz_positions
-        description: "Lot-level positions from Topaz (custodian). CUSIP identifiers, custodian EOD prices, lot grain."
+        description: "Position-level positions from Topaz (custodian). CUSIP identifiers, custodian EOD prices, position grain (one row per account × security)."
       - name: emerald_positions
-        description: "Position-level data from Emerald (portfolio management). Ticker identifiers, PM evaluated prices ±0.3%."
+        description: "Lot-level data from Emerald (front office OMS). Ticker identifiers, PM evaluated prices ±0.3%. One row per trade acquisition lot."
       - name: ruby_positions
         description: "Position-level data from Ruby (fund accounting). ISIN identifiers, NAV prices ±0.5%. No unrealized G/L column."
       - name: security_master_stub

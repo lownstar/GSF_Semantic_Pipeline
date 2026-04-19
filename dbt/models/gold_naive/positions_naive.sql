@@ -42,7 +42,7 @@ SELECT
     -- A2: Ruby NAV price (fund accounting). Authoritative price is Topaz custodian EOD.
     pi.price                            AS avg_price,
 
-    -- Correct grain — Ruby reports one row per position (not lot-level like Topaz).
+    -- Correct grain — Ruby reports one row per position (not lot-level like Emerald).
     pi.quantity                         AS total_quantity,
 
     -- A2: market value computed from NAV price, not custodian EOD.

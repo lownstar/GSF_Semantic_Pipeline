@@ -42,8 +42,8 @@ INSERT INTO SILVER.POSITIONS_INTEGRATED (
 WITH
 
 -- ── CTE 1: Normalize Topaz rows ───────────────────────────────────────────────
--- A7: record_id = lot_id (LOT-NNNNNNN) — grain is lot-level, invisible in schema
--- A9: cost_basis = specific lot cost (Topaz tracks individual lot acquisition cost)
+-- A7: record_id = composite POS-{acct}-{cusip} — position-level, Topaz is already aggregated
+-- A9: cost_basis = custodian cost (Topaz reports net position cost, not specific lot)
 -- A2: price = custodian EOD baseline (no variance applied at source)
 
 topaz_norm AS (

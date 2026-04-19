@@ -20,9 +20,9 @@ USE DATABASE GSF_DEMO;
 CREATE OR REPLACE TABLE SILVER.POSITIONS_INTEGRATED (
 
     -- ── Record identity ────────────────────────────────────────────────────────
-    -- A7: LOT-* from Topaz (lot-level) coexist with POS-* from Emerald and
+    -- A7: LOT-* from Emerald (lot-level) coexist with POS-* from Topaz and
     -- NAV-* from Ruby (position-level). Grain is invisible in the schema.
-    RECORD_ID           VARCHAR(50)                 COMMENT 'A7: LOT-* (Topaz lots) | POS-* (Emerald positions) | NAV-* (Ruby positions) — mixed grain, no grain column',
+    RECORD_ID           VARCHAR(50)                 COMMENT 'A7: LOT-* (Emerald lots) | POS-* (Topaz positions) | NAV-* (Ruby positions) — mixed grain, no grain column',
 
     SOURCE_SYSTEM       VARCHAR(10)                 COMMENT 'TOPAZ | EMERALD | RUBY — present but naive AI queries do not filter on it',
 
@@ -42,9 +42,9 @@ CREATE OR REPLACE TABLE SILVER.POSITIONS_INTEGRATED (
     POSITION_DATE       DATE                        COMMENT 'A6: settlement date (Topaz) | trade date (Emerald) | NAV strike date (Ruby) — same value, different semantics',
 
     -- ── Financials ────────────────────────────────────────────────────────────
-    -- A7: Topaz rows are lot-level — SUM(QUANTITY) triple-counts positions that
-    -- appear in all three sources (Topaz lot × n_lots, Emerald × 1, Ruby × 1)
-    QUANTITY            DECIMAL(18,4)               COMMENT 'A7: lot-level for Topaz rows — SUM() overcounts vs Emerald/Ruby position-level rows; average overcount ~3x',
+    -- A7: Emerald rows are lot-level — SUM(QUANTITY) overcounts positions that
+    -- appear in all three sources (Emerald lot × n_lots, Topaz × 1, Ruby × 1)
+    QUANTITY            DECIMAL(18,4)               COMMENT 'A7: lot-level for Emerald rows — SUM() overcounts vs Topaz/Ruby position-level rows; average overcount ~3x',
 
     -- A2: three different price sources blended into one column
     PRICE               DECIMAL(18,4)               COMMENT 'A2: custodian EOD (Topaz) | PM evaluated (Emerald, ±0.3%) | NAV (Ruby, ±0.5%) — blended in one column',
@@ -53,7 +53,7 @@ CREATE OR REPLACE TABLE SILVER.POSITIONS_INTEGRATED (
     MARKET_VALUE        DECIMAL(18,2)               COMMENT 'A7+A2: computed from mixed grain (lot vs position) AND mixed price sources — SUM() is economically meaningless',
 
     -- A9: three incompatible cost accounting methods in one column
-    COST_BASIS          DECIMAL(18,2)               COMMENT 'A9: specific lot cost (Topaz) | avg cost × qty (Emerald) | book cost (Ruby) — three methods, not comparable',
+    COST_BASIS          DECIMAL(18,2)               COMMENT 'A9: specific lot cost (Emerald) | custodian cost (Topaz) | book cost (Ruby) — three methods, not comparable',
 
     -- A11: NULL for all ~4,886 Ruby rows — silently excluded from aggregates
     UNREALIZED_GL       DECIMAL(18,2)               COMMENT 'A11: NULL for all Ruby rows (~22% of total) — fund accounting has no G/L concept; aggregates silently undercount',

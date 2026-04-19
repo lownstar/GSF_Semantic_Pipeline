@@ -162,8 +162,8 @@ Produces 9 deterministic CSVs in `data/seed_v2/`. All 21 integrity checks must p
 | `dw_security.csv` | 200 | Complete security master |
 | `dw_position.csv` | 4,886 | Canonical position-level grain |
 | `dw_trade_lot.csv` | 12,388 | Lot-level detail |
-| `positions_topaz.csv` | 12,388 | Topaz feed (CUSIP, lot-level, custodian price) |
-| `positions_emerald.csv` | 4,886 | Emerald feed (ticker, position-level, PM price) |
+| `positions_topaz.csv` | 4,886 | Topaz feed (CUSIP, position-level, custodian price) |
+| `positions_emerald.csv` | 12,388 | Emerald feed (ticker, lot-level, PM price) |
 | `positions_ruby.csv` | 4,886 | Ruby feed (ISIN, position-level, NAV price) |
 | `security_master_stub.csv` | 170 | Partial master — 30 securities absent (A8/A10) |
 | `positions_integrated.csv` | 22,160 | Naive ETL reference (validation only) |
