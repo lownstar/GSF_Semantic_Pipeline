@@ -127,8 +127,8 @@ models:
       - name: cost_basis
         description: Specific lot acquisition cost (Topaz method).
       - name: source_system
-        description: Always TOPAZ — lot-level data is exclusively from the custodian.
+        description: Always EMERALD — lot-level data is exclusively from the front office OMS.
         tests:
           - not_null
           - accepted_values:
-              values: [TOPAZ]
+              values: [EMERALD]

@@ -68,12 +68,6 @@ models:
         description: >
           Canonical security ID from securities_naive (all 200 securities).
           No positions are dropped for missing security master coverage.
-      - name: source_system
-        description: Source system (TOPAZ, EMERALD, RUBY).
-        tests:
-          - not_null
-          - accepted_values:
-              values: [TOPAZ, EMERALD, RUBY]
       - name: position_date
         description: Position date in source-system semantics (settlement / trade / NAV).
         tests: [not_null]

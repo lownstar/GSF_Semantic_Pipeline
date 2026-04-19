@@ -4,8 +4,8 @@ Naive Pipeline — Bronze Loader
 Loads four Bronze tables into Snowflake from either local CSVs (PUT + COPY)
 or from the S3 landing zone (COPY FROM external stage).
 
-  BRONZE.TOPAZ_POSITIONS       <- positions_topaz.csv       (12,388 rows)
-  BRONZE.EMERALD_POSITIONS     <- positions_emerald.csv      (4,886 rows)
+  BRONZE.TOPAZ_POSITIONS       <- positions_topaz.csv        (4,886 rows)
+  BRONZE.EMERALD_POSITIONS     <- positions_emerald.csv     (12,388 rows)
   BRONZE.RUBY_POSITIONS        <- positions_ruby.csv         (4,886 rows)
   BRONZE.SECURITY_MASTER_STUB  <- security_master_stub.csv  (  170 rows)
 
@@ -32,8 +32,8 @@ load_dotenv()
 
 # ── Expected row counts (from generator_v2 deterministic output) ───────────────
 EXPECTED_COUNTS = {
-    "BRONZE.TOPAZ_POSITIONS":      12_388,
-    "BRONZE.EMERALD_POSITIONS":     4_886,
+    "BRONZE.TOPAZ_POSITIONS":       4_886,
+    "BRONZE.EMERALD_POSITIONS":    12_388,
     "BRONZE.RUBY_POSITIONS":        4_886,
     "BRONZE.SECURITY_MASTER_STUB":    170,
 }

@@ -24,7 +24,7 @@ description: |
 tables:
   - name: topaz_positions
     description: |
-      Lot-level custody positions from Topaz. Uses CUSIP security identifiers and custodian account numbers. Custodian end-of-day pricing. Grain is lot-level (2-3 rows per position on average). No direct join to Emerald or Ruby without a security master.
+      Position-level custody positions from Topaz. Uses CUSIP security identifiers and custodian account numbers. Custodian end-of-day pricing. Grain is position-level (one row per account × security). No direct join to Emerald or Ruby without a security master.
     base_table:
       database: GSF_DEMO
       schema: BRONZE
@@ -46,14 +46,6 @@ tables:
         expr: SEC_CUSIP
         data_type: TEXT
         unique: false
-      - name: lot_id
-        synonyms:
-          - lot
-          - record id
-        description: Lot identifier (LOT-NNNNNNN). Grain is lot-level.
-        expr: LOT_ID
-        data_type: TEXT
-        unique: true
       - name: ccy
         synonyms:
           - currency
@@ -75,7 +67,7 @@ tables:
         synonyms:
           - shares
           - quantity
-        description: Units held at lot level. Sum across lots gives the correct position total within Topaz, but coexisting with Emerald/Ruby position-level rows means COUNT and cardinality queries against combined data break.
+        description: Position-level units held. One row per account × security — safe for direct aggregation within Topaz, but coexisting with Emerald lot-level rows means COUNT and cardinality queries against combined data break.
         expr: UNITS
         data_type: NUMBER
         default_aggregation: sum
@@ -112,18 +104,22 @@ tables:
         expr: UNRLZD_GL
         data_type: NUMBER
         default_aggregation: sum
-    primary_key:
-      columns:
-        - LOT_ID
-
   - name: emerald_positions
     description: |
-      Position-level portfolio management data from Emerald. Uses ticker security identifiers and portfolio codes. PM evaluated pricing (±0.3% vs custodian EOD). Position grain (one row per portfolio × security). No lot detail.
+      Lot-level portfolio management data from Emerald (front office OMS). Uses ticker security identifiers and portfolio codes. PM evaluated pricing (±0.3% vs custodian EOD). Lot grain (2-3 rows per position on average). Each row is one trade acquisition lot.
     base_table:
       database: GSF_DEMO
       schema: BRONZE
       table: EMERALD_POSITIONS
     dimensions:
+      - name: lot_id
+        synonyms:
+          - lot
+          - record id
+        description: Trade lot identifier (LOT-NNNNNNN). Grain is lot-level — one row per acquisition lot.
+        expr: LOT_ID
+        data_type: TEXT
+        unique: true
       - name: portfolio_id
         synonyms:
           - account
@@ -181,14 +177,15 @@ tables:
         expr: MARKET_VALUE
         data_type: NUMBER
         default_aggregation: sum
-      - name: avg_cost_basis
+      - name: lot_cost_basis
         synonyms:
           - cost
-          - average cost
-        description: Average cost basis per unit. Multiply by quantity for total cost basis.
-        expr: AVG_COST_BASIS
+          - lot cost
+          - acquisition cost
+        description: Total acquisition cost for this specific lot. Not comparable to Topaz custodian cost or Ruby book cost (A9).
+        expr: LOT_COST_BASIS
         data_type: NUMBER
-        default_aggregation: avg
+        default_aggregation: sum
       - name: unrealized_pnl
         synonyms:
           - unrealized gain
@@ -198,6 +195,9 @@ tables:
         expr: UNREALIZED_PNL
         data_type: NUMBER
         default_aggregation: sum
+    primary_key:
+      columns:
+        - LOT_ID
 
   - name: ruby_positions
     description: |
