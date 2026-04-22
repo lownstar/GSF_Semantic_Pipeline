@@ -22,14 +22,18 @@ from generator_v2.config import (
     ACCOUNT_TYPES,
     ASSET_CLASSES,
     AVG_LOTS_PER_POSITION,
+    CLIENT_TYPES,
     EMERALD_ACCT_PREFIX,
     NUM_ACCOUNTS,
+    NUM_CLIENTS,
     NUM_SECURITIES,
     POSITION_COVERAGE,
     POSITION_DATE,
     RANDOM_SEED,
     RUBY_ACCT_PREFIX,
     SECURITY_TYPES,
+    STRATEGY_DIST,
+    STRATEGY_TYPES,
     TICKER_MAX_LEN,
     TICKER_MIN_LEN,
     TOPAZ_ACCT_PREFIX,
@@ -38,6 +42,11 @@ from generator_v2.config import (
 fake = Faker()
 Faker.seed(RANDOM_SEED)
 rng = random.Random(RANDOM_SEED)
+
+# Isolated RNG for client/strategy/link generation — keeps existing rng sequence unchanged.
+_rng_ext = random.Random(RANDOM_SEED + 100)
+_fake_ext = Faker()
+_fake_ext.seed_instance(RANDOM_SEED + 100)
 
 
 # ── Identifier generators ─────────────────────────────────────────────────────
@@ -88,16 +97,47 @@ def _ruby_acct(seq: int) -> str:
     return f"{RUBY_ACCT_PREFIX}-{seq:04d}"
 
 
+# ── DW_CLIENT ─────────────────────────────────────────────────────────────────
+
+def generate_dw_client() -> pd.DataFrame:
+    """
+    Client/household master. Each client owns exactly 4 accounts.
+    Uses isolated _rng_ext / _fake_ext so the main rng sequence is unchanged.
+    """
+    rows = []
+    suffixes = ["Holdings", "Capital", "Investments", "Partners", "Group"]
+    for i in range(1, NUM_CLIENTS + 1):
+        rows.append({
+            "client_id":   f"CLT-{i:03d}",
+            "client_name": _fake_ext.company() + " " + _rng_ext.choice(suffixes),
+            "client_type": _rng_ext.choice(CLIENT_TYPES),
+        })
+    return pd.DataFrame(rows)
+
+
 # ── DW_ACCOUNT ────────────────────────────────────────────────────────────────
 
-def generate_dw_account() -> pd.DataFrame:
+def generate_dw_account(dw_client: pd.DataFrame) -> pd.DataFrame:
     """
     Canonical account master.
     Each account has three source-system keys (Ambiguity A3/A4):
       custodian_account_num  → used by Topaz
       portfolio_code         → used by Emerald
       fund_code              → used by Ruby
+
+    New: client_id FK and strategy_type are assigned via isolated _rng_ext so
+    existing field values (names, custodian nums, etc.) remain byte-identical.
     """
+    # Build client and strategy pools using isolated RNG — does not affect main rng.
+    client_ids = dw_client["client_id"].tolist()
+    client_pool = client_ids * (NUM_ACCOUNTS // NUM_CLIENTS)  # exactly 4 per client → 100
+    _rng_ext.shuffle(client_pool)
+
+    strategy_pool: list[str] = []
+    for strategy, count in STRATEGY_DIST.items():
+        strategy_pool.extend([strategy] * count)
+    _rng_ext.shuffle(strategy_pool)
+
     rows = []
     for i in range(1, NUM_ACCOUNTS + 1):
         acct_type = rng.choice(ACCOUNT_TYPES)
@@ -110,6 +150,34 @@ def generate_dw_account() -> pd.DataFrame:
             "portfolio_code":        _emerald_acct(i),
             "fund_code":             _ruby_acct(i),
             "is_active":             True,
+            "client_id":             client_pool[i - 1],
+            "strategy_type":         strategy_pool[i - 1],
+        })
+    return pd.DataFrame(rows)
+
+
+# ── DW_ACCOUNT_LINKS ──────────────────────────────────────────────────────────
+
+def generate_dw_account_links(dw_account: pd.DataFrame) -> pd.DataFrame:
+    """
+    Cross-system account relationship table.
+    Derivatives strategy accounts require a separate OTC collateral account at
+    the custodian (Topaz). Each Derivatives account is assigned one Cash account
+    as its collateral counterpart via round-robin.
+    """
+    deriv_ids = dw_account.loc[
+        dw_account["strategy_type"] == "Derivatives", "account_id"
+    ].tolist()
+    cash_ids = dw_account.loc[
+        dw_account["strategy_type"] == "Cash", "account_id"
+    ].tolist()
+
+    rows = []
+    for i, acct_id in enumerate(deriv_ids):
+        rows.append({
+            "account_id":        acct_id,
+            "linked_account_id": cash_ids[i % len(cash_ids)],
+            "link_type":         "otc_collateral",
         })
     return pd.DataFrame(rows)
 
