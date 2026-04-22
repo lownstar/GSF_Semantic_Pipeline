@@ -27,7 +27,7 @@ LEGACY SOURCE SYSTEMS
   Ruby (Fund Acctg)     — ISIN, position-level, NAV price
         |
         v Phase 1: Generation
-  generator_v2 -> 9 seed CSVs (data/seed_v2/)
+  generator_v2 -> 11 seed CSVs (data/seed_v2/)
         |
         v Phase 2: Delivery
   delivery/deliver.py -> S3 landing zone (topaz/ emerald/ ruby/ reference/)
@@ -224,6 +224,19 @@ See [docs/ambiguity_registry_v2.md](docs/ambiguity_registry_v2.md) for full deta
 | Stage | `@BRONZE.GSF_BRONZE_STAGE` | Active (local loads) |
 | Stage | `@BRONZE.GSF_S3_LANDING` | Active (DDL in infrastructure/s3_external_stage.sql) |
 | Stage | `@GOLD.GSF_GOLD_STAGE` | Active (semantic YAMLs) |
+
+---
+
+## Related Projects
+
+**[GSF_Account_Network](https://github.com/lownstar/GSF_Account_Network)** — companion portfolio
+demo that visualizes the multi-source identity ambiguity problem as an interactive 3D graph.
+Poses the question this project answers: *"Here's a canonical account — it appears as three
+different records across three source systems with different market values. Which number is right?"*
+
+The two demos are designed as a two-part narrative. GSF_Account_Network reads directly from
+`data/seed_v2/` CSVs — including the client/household tier (`dw_client.csv`) and cross-system
+account relationship data (`dw_account_links.csv`) added in the Identity Network integration.
 
 ---
 
