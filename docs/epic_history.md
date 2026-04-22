@@ -113,3 +113,23 @@ Key design: every source file is derivable from canonical DW with deterministic 
 
 **Status:** Deferred as a separate project. This project is designed with plug-in points
 (variance JSON output format) so Epic 6 can consume the results independently.
+
+---
+
+## Cross-Project: GSF Identity Network Integration (2026-04-22)
+
+**Status:** Phase 2 in progress (`feat/gsf-identity-network-phase2`)
+
+The GSF_Account_Network project visualizes the multi-source identity ambiguity problem as the
+"setup" half of a two-demo portfolio narrative. This project is the resolution half.
+
+**Phase 1 (Account Network — unblocked):** Uses existing position CSVs to render 100 canonical
+accounts as hub nodes with 3 source spokes each (Topaz/Emerald/Ruby), MV discrepancy tooltips.
+
+**Phase 2 (this project's contribution):** Generator extended to produce client/household tier
+data and OTC collateral account relationships. See `docs/refactoring_changelog.md` for full detail.
+
+**Ambiguities surfaced in the network graph:** A4 (account ID fragmentation, the core spoke
+pattern), A2 (MV delta per account), A5/A7 (Emerald lot count vs Topaz position count),
+A8 (unmastered security orphans), A11 (Ruby NULL unrealized G/L). New derivative: collateral
+account relationship gap (Derivatives accounts → Ruby GL incomplete without collateral movements).

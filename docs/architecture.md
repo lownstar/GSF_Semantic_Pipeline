@@ -36,7 +36,7 @@ LEGACY SOURCE SYSTEMS (3 synthetic feeds, different schemas)
   Ruby (Fund Acctg)     — ISIN, position-level, NAV price
         |
         v [Phase 1: Generation]
-  generator_v2 -> 9 CSVs in data/seed_v2/
+  generator_v2 -> 11 CSVs in data/seed_v2/
         |
         v [Phase 2: Delivery]
   delivery/deliver.py -> S3 landing zone
@@ -112,10 +112,17 @@ LEGACY SOURCE SYSTEMS (3 synthetic feeds, different schemas)
 | GOLD_NAIVE.ACCOUNTS_NAIVE | 100 | Canonical accounts (Ruby fund_code mapping, all source keys) |
 | GOLD_NAIVE.SECURITIES_NAIVE | 200 | Full security master (CUSIP/ISIN/ticker/asset_class) |
 | GOLD_NAIVE.POSITIONS_NAIVE | 4,886 | Ruby-only positions — correct grain, NAV price, NULL G/L |
-| GOLD.DW_ACCOUNT | 100 | Canonical accounts (all 3 source keys mapped) |
+| GOLD.DW_ACCOUNT | 100 | Canonical accounts (all 3 source keys + client_id + strategy_type) |
 | GOLD.DW_SECURITY | 200 | Complete master — zero gaps, zero NULL asset_class |
 | GOLD.DW_POSITION | 4,886 | Position-level grain — zero NULL unrealized_gain_loss |
 | GOLD.DW_TRADE_LOT | 12,388 | Lot-level detail |
+
+**Seed-only reference tables** (not loaded to Snowflake; consumed by GSF_Account_Network):
+
+| File | Rows | Notes |
+|---|---|---|
+| `data/seed_v2/dw_client.csv` | 25 | Client/household master — 4 accounts per client |
+| `data/seed_v2/dw_account_links.csv` | 20 | OTC collateral links — Derivatives accounts → Cash collateral accounts |
 
 ---
 
