@@ -37,6 +37,12 @@ dbt/logs/
 dbt/target/
 dbt/.user.yml
 
+# Runtime logs
+logs/
+
+# Internal Claude settings (not for public repo)
+.claude/settings.local.json
+
 # Variance run results (reproducible via runner.py)
 variance/results/*.json
 !variance/results/demo_results.json
