@@ -1,7 +1,7 @@
-# Epic History (PoC Phase, Epics 1-5)
+# Epic History
 
-Historical record of Epic completion during the proof-of-concept phase (pre-refactoring).
-This document preserves the detailed task breakdowns and validation results.
+Historical record of completed epics (PoC phase and beyond) plus planned future work.
+Completed epics preserve task breakdowns and validation results; planned epics document design decisions for when implementation begins.
 
 ---
 
@@ -133,3 +133,76 @@ data and OTC collateral account relationships. See `docs/refactoring_changelog.m
 pattern), A2 (MV delta per account), A5/A7 (Emerald lot count vs Topaz position count),
 A8 (unmastered security orphans), A11 (Ruby NULL unrealized G/L). New derivative: collateral
 account relationship gap (Derivatives accounts → Ruby GL incomplete without collateral movements).
+
+---
+
+## Epic 7 (Planned): Interactive "Try It Yourself" Chat Tab
+
+**Status:** Planned
+**Motivation:** Portfolio visitors currently take the variance results on faith. This epic
+adds a multi-turn chat interface so they can ask their own natural language questions directly
+to Cortex Analyst across all four semantic tiers, see the generated SQL, and explore with
+follow-up questions. The "agentic" feel comes from Cortex maintaining conversation context
+across turns.
+
+### Goal
+
+Replace the one-way "watch the pre-run results" experience with a live chat where users type
+questions, watch the SQL generate, and ask follow-ups — proving the demo is real, not staged.
+Must work on Streamlit Community Cloud (via Secrets) and locally (via `.env`).
+
+### Key Deliverables
+
+| File | Change |
+|---|---|
+| `app/cortex_chat.py` | New module — credential loading, Snowflake connection, multi-turn Cortex API call, SQL execution |
+| `app/streamlit_app.py` | Add second tab "Try It Yourself" with tier selector, suggested questions, `st.chat_message` history, `st.chat_input` |
+| `requirements-app.txt` | Add `snowflake-connector-python>=3.0`, `cryptography>=41.0`, `python-dotenv>=1.0` |
+| `docs/runbook.md` | New "Enabling the Live Chat Tab" section with Streamlit Secrets `.toml` template |
+
+### Design Decisions
+
+**Multi-turn:** Full `messages` history is sent on every Cortex Analyst API call. The assistant's
+prior text + SQL blocks must be echoed back so Cortex can resolve follow-up pronouns ("now break
+*that* down..."). Session state holds a richer dict `{role, content, sql, rows, error}`.
+
+**Credential loading (two paths):**
+- *Deployed (Streamlit Secrets):* `st.secrets["SNOWFLAKE_PRIVATE_KEY_PEM"]` (PEM string) →
+  `cryptography` → DER bytes → `snowflake.connector.connect(private_key=...)`
+- *Local (.env):* Existing `SNOWFLAKE_PRIVATE_KEY_FILE` (.p8 DER file) path →
+  read bytes directly → same `private_key=` param
+
+**Graceful degradation:** When neither `st.secrets` nor `.env` provides Snowflake config,
+the tab renders an informational callout (local setup instructions + Community Cloud Secrets
+instructions) instead of an error.
+
+**Tier selector:** All four tiers available (Bronze / Silver / Naive Gold / Semantic Gold), each
+with a one-line description. Switching tier requires starting a new conversation (session state
+reset) to avoid context pollution across semantic models.
+
+**Reuse from existing code:**
+- `cortex/query_cortex.py`: `execute_sql()`, `_ensure_staged()`, `MODELS` dict, REST endpoint pattern
+- `variance/questions.py`: `QUESTIONS` list powers the suggested-question prompts
+
+### Cortex Analyst Wire Format (multi-turn)
+
+```json
+{
+  "messages": [
+    {"role": "user",     "content": [{"type": "text", "text": "What is the total MV of ACC-0042?"}]},
+    {"role": "analyst",  "content": [{"type": "text", "text": "The total is $47.9M."}, {"type": "sql", "statement": "SELECT ..."}]},
+    {"role": "user",     "content": [{"type": "text", "text": "Now break that down by asset class"}]}
+  ],
+  "semantic_model_file": "@GSF_DEMO.GOLD.GSF_GOLD_STAGE/semantic/positions_gold.yaml"
+}
+```
+
+### Verification Checklist
+
+1. Local with `.env` → chat tab live, multi-turn works, SQL + results render
+2. Local without `.env` → tab shows no-credentials callout, no errors
+3. Deployed → after adding Streamlit Secrets, chat tab goes live with no code changes
+4. Multi-turn → ask Q01, then ask a follow-up scoped to the same account → Cortex uses context
+5. Tier comparison → same question on `gold_naive` vs `gold` shows wrong answer vs correct answer in real-time
+6. Suggested questions → clicking pre-fills and submits in one action
+7. Tab 1 (Variance Analysis) → unaffected by the tab restructure
