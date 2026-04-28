@@ -15,6 +15,7 @@ RANDOM_SEED = 42
 
 # ── Volume targets ────────────────────────────────────────────────────────────
 
+NUM_CLIENTS   = 25      # DW_CLIENT rows (each client owns exactly 4 accounts)
 NUM_ACCOUNTS = 100      # DW_ACCOUNT rows
 NUM_SECURITIES = 200    # DW_SECURITY rows
 AVG_LOTS_PER_POSITION = 3   # average trade lots per account × security holding
@@ -77,15 +78,27 @@ SECURITY_TYPES = {
 
 ACCOUNT_TYPES = ["Individual", "Institutional", "Trust", "Endowment", "Fund"]
 
+# ── Client / household tier ───────────────────────────────────────────────────
+# Clients own multiple strategy accounts. Strategy type determines cross-system
+# relationship patterns (e.g., Derivatives accounts require an OTC collateral
+# account at the custodian in addition to the standard custody link).
+
+CLIENT_TYPES   = ["Individual", "Family Office", "Institutional", "Endowment"]
+STRATEGY_TYPES = ["Equities", "Fixed Income", "Derivatives", "Cash"]
+# Target distribution across 100 accounts
+STRATEGY_DIST  = {"Equities": 40, "Fixed Income": 30, "Derivatives": 20, "Cash": 10}
+
 # ── Output ────────────────────────────────────────────────────────────────────
 
 OUTPUT_DIR = "data/seed_v2"
 
 # DW canonical files
-DW_ACCOUNT_FILE   = "dw_account.csv"
-DW_SECURITY_FILE  = "dw_security.csv"
-DW_TRADE_LOT_FILE = "dw_trade_lot.csv"
-DW_POSITION_FILE  = "dw_position.csv"
+DW_CLIENT_FILE        = "dw_client.csv"
+DW_ACCOUNT_FILE       = "dw_account.csv"
+DW_ACCOUNT_LINKS_FILE = "dw_account_links.csv"
+DW_SECURITY_FILE      = "dw_security.csv"
+DW_TRADE_LOT_FILE     = "dw_trade_lot.csv"
+DW_POSITION_FILE      = "dw_position.csv"
 
 # Gemstone source system files
 TOPAZ_FILE   = "positions_topaz.csv"

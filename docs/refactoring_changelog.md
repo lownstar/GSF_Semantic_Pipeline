@@ -2,6 +2,94 @@
 
 ---
 
+## GSF Identity Network — Phase 2: Client Tier & Account Links (2026-04-22)
+
+### Why
+
+Cross-functional work with the GSF_Account_Network project, which visualizes the multi-source
+identity ambiguity problem as the "setup" half of a two-demo portfolio narrative. Phase 2 required
+a client/household tier and cross-system account relationship data to build a three-tier hierarchy
+graph (Client → Account → Source Record).
+
+### What changed
+
+Added three new canonical data assets to the generator without disturbing any existing field values:
+
+**New: `dw_client.csv`** — 25 clients (CLT-001 through CLT-025), each owning exactly 4 accounts.
+Fields: `client_id`, `client_name`, `client_type` (Individual, Family Office, Institutional, Endowment).
+
+**Updated: `dw_account.csv`** — two new columns added. All existing values (custodian_account_num,
+portfolio_code, fund_code, etc.) are byte-identical to the prior version.
+- `client_id` — FK to dw_client
+- `strategy_type` — Equities (40), Fixed Income (30), Derivatives (20), Cash (10)
+
+**New: `dw_account_links.csv`** — 20 OTC collateral links. Derivatives strategy accounts require a
+separate collateral account at the custodian (Topaz) beyond the standard custody relationship.
+Each Derivatives account is paired with a Cash account via round-robin.
+Fields: `account_id`, `linked_account_id`, `link_type` (`otc_collateral`).
+
+Isolation technique: new fields use `_rng_ext = random.Random(RANDOM_SEED + 100)` and a separately
+seeded Faker instance so the main `rng` sequence is completely unchanged.
+
+### Files Updated
+
+| File | What changed |
+|---|---|
+| `generator_v2/config.py` | Added `NUM_CLIENTS`, `CLIENT_TYPES`, `STRATEGY_TYPES`, `STRATEGY_DIST`, `DW_CLIENT_FILE`, `DW_ACCOUNT_LINKS_FILE` |
+| `generator_v2/models/canonical.py` | Added `_rng_ext`/`_fake_ext` isolated instances; added `generate_dw_client()`; updated `generate_dw_account(dw_client)` signature; added `generate_dw_account_links()` |
+| `generator_v2/generator.py` | Wired new functions into orchestration, CSV writes, and `validate()` (5 new VC1–VC5 checks) |
+| `data/seed_v2/dw_client.csv` | New — 25 rows |
+| `data/seed_v2/dw_account.csv` | Updated — 100 rows, 2 new columns |
+| `data/seed_v2/dw_account_links.csv` | New — 20 rows |
+
+### Validation
+
+Generator now runs 26 checks (was 21): V1–V13, VI1–VI5, VS1–VS3, VC1–VC5. All pass.
+dbt pipeline (seeds, models, tests) is unaffected — `dbt/seeds/account_master_full.csv` is a
+separate file and was not modified.
+
+### Branch
+
+`feat/gsf-identity-network-phase2` — open, pending merge.
+
+---
+
+## Emerald-Topaz Grain Swap (2026-04-22)
+
+### Why
+
+The original grain assignment (Topaz = lot-level, Emerald = position-level) was architecturally
+backwards. In practice, OMS systems (Emerald / front office) track individual order executions
+as acquisition lots; custodians (Topaz) send daily net position snapshots. Swapping the grain
+makes the ambiguity scenario more realistic and defensible to a hiring audience.
+
+### What changed
+
+- **Emerald** is now lot-level (12,388 rows) — the OMS grain
+- **Topaz** is now position-level (4,886 rows) — the custodian grain
+- `LOT_ID` moved from Topaz schema to Emerald schema in Bronze
+- `dw_trade_lot` dbt model now sources from Emerald; `dw_position` Topaz CTE simplified
+- A5/A7/A9 failure narratives updated: Emerald is now the grain trap
+- All seed CSVs and `demo_results.json` regenerated; dbt 67/67 tests pass
+- Scores unchanged: Naive Gold 7/11, Semantic Gold 11/11
+
+### Files Updated
+
+Generator (`generator_v2/models/sources.py`, `generator_v2/models/canonical.py`),
+Bronze DDL (`pipeline_naive/ddl_bronze.sql`, `pipeline_naive/ddl_silver.sql`, `pipeline_naive/etl_silver.sql`),
+dbt models (`dbt/models/gold_semantic/dw_position.sql`, `dbt/models/gold_semantic/dw_trade_lot.sql`,
+`dbt/models/gold_naive/positions_naive.sql`, all schema.yml files),
+semantic YAMLs (`semantic_model/positions_bronze.yaml`, `semantic_model/positions_gold_naive.yaml`),
+docs (`docs/ambiguity_registry_v2.md`, `docs/architecture.md`),
+variance (`variance/questions.py`, `variance/results/demo_results.json`),
+load script (`pipeline_naive/load_bronze.py`).
+
+### Branch
+
+`feat/emerald-topaz-lot-swap` — merged to main 2026-04-22.
+
+---
+
 ## Naive Gold Rebuild + Spotlight UI (2026-04-18)
 
 ### Why

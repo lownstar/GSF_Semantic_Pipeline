@@ -30,6 +30,8 @@ import pandas as pd
 
 from generator_v2.config import (
     DW_ACCOUNT_FILE,
+    DW_ACCOUNT_LINKS_FILE,
+    DW_CLIENT_FILE,
     DW_POSITION_FILE,
     DW_SECURITY_FILE,
     DW_TRADE_LOT_FILE,
@@ -43,6 +45,8 @@ from generator_v2.config import (
 )
 from generator_v2.models.canonical import (
     generate_dw_account,
+    generate_dw_account_links,
+    generate_dw_client,
     generate_dw_position,
     generate_dw_security,
     generate_dw_trade_lot,
@@ -62,7 +66,9 @@ def _write(df: pd.DataFrame, path: str, label: str) -> None:
 
 
 def validate(
+    dw_client: pd.DataFrame,
     dw_account: pd.DataFrame,
+    dw_account_links: pd.DataFrame,
     dw_security: pd.DataFrame,
     dw_trade_lot: pd.DataFrame,
     dw_position: pd.DataFrame,
@@ -78,6 +84,7 @@ def validate(
     Checks V1–V13: canonical DW table integrity and source file consistency.
     Checks VI1–VI5: integrated table structural properties (confirms the
     intentional ambiguities are correctly encoded).
+    Checks VC1–VC5: client/household tier and account link integrity.
 
       V1  All DW_TRADE_LOT account_ids exist in DW_ACCOUNT
       V2  All DW_TRADE_LOT security_ids exist in DW_SECURITY
@@ -102,6 +109,12 @@ def validate(
       VS1 Security master stub row count = NUM_SECURITIES − n_unmastered
       VS2 All stub security_master_ids exist in DW_SECURITY.security_id
       VS3 No stub security_master_ids are in the unmastered set (no overlap)
+
+      VC1 All client_ids in DW_ACCOUNT exist in DW_CLIENT
+      VC2 All 25 clients own at least one account
+      VC3 All account_ids in DW_ACCOUNT_LINKS exist in DW_ACCOUNT
+      VC4 All linked_account_ids in DW_ACCOUNT_LINKS exist in DW_ACCOUNT
+      VC5 All Derivatives accounts have at least one otc_collateral link
     """
     errors = []
 
@@ -267,14 +280,48 @@ def validate(
             f"VS3 FAIL: {len(unmastered_leaked)} stub security_master_ids not found as mastered in integrated table"
         )
 
-    n_checks = 13 + 5 + 3
+    # ── Client/household tier checks (VC1–VC5) ────────────────────────────────
+
+    # VC1 — client FK on dw_account
+    client_ids = set(dw_client["client_id"])
+    acct_client_ids = set(dw_account["client_id"])
+    if not acct_client_ids.issubset(client_ids):
+        errors.append(f"VC1 FAIL: {len(acct_client_ids - client_ids)} unknown client_ids in DW_ACCOUNT")
+
+    # VC2 — every client owns at least one account
+    clients_with_accounts = set(dw_account["client_id"])
+    childless = client_ids - clients_with_accounts
+    if childless:
+        errors.append(f"VC2 FAIL: {len(childless)} clients have no accounts: {sorted(childless)}")
+
+    # VC3 — account_id FK in dw_account_links
+    link_acct_ids = set(dw_account_links["account_id"])
+    dw_acct_ids = set(dw_account["account_id"])
+    if not link_acct_ids.issubset(dw_acct_ids):
+        errors.append(f"VC3 FAIL: {len(link_acct_ids - dw_acct_ids)} unknown account_ids in DW_ACCOUNT_LINKS")
+
+    # VC4 — linked_account_id FK in dw_account_links
+    link_linked_ids = set(dw_account_links["linked_account_id"])
+    if not link_linked_ids.issubset(dw_acct_ids):
+        errors.append(f"VC4 FAIL: {len(link_linked_ids - dw_acct_ids)} unknown linked_account_ids in DW_ACCOUNT_LINKS")
+
+    # VC5 — every Derivatives account has at least one otc_collateral link
+    deriv_ids = set(dw_account.loc[dw_account["strategy_type"] == "Derivatives", "account_id"])
+    linked_deriv_ids = set(
+        dw_account_links.loc[dw_account_links["link_type"] == "otc_collateral", "account_id"]
+    )
+    unlinked_deriv = deriv_ids - linked_deriv_ids
+    if unlinked_deriv:
+        errors.append(f"VC5 FAIL: {len(unlinked_deriv)} Derivatives accounts have no otc_collateral link")
+
+    n_checks = 13 + 5 + 3 + 5
     if errors:
         print("\nValidation FAILED:")
         for e in errors:
             print(f"  ✗ {e}")
         return False
     else:
-        print(f"\nValidation PASSED -- all {n_checks} checks OK (V1–V13, VI1–VI5, VS1–VS3)")
+        print(f"\nValidation PASSED -- all {n_checks} checks OK (V1–V13, VI1–VI5, VS1–VS3, VC1–VC5)")
         return True
 
 
@@ -283,10 +330,12 @@ def run(output_dir: str, run_validate: bool) -> None:
     print(f"\nGenerating seed data -> {output_dir}/\n")
 
     print("Building canonical DW tables...")
-    dw_account   = generate_dw_account()
-    dw_security  = generate_dw_security()
-    dw_trade_lot = generate_dw_trade_lot(dw_account, dw_security)
-    dw_position  = generate_dw_position(dw_trade_lot, dw_security)
+    dw_client        = generate_dw_client()
+    dw_account       = generate_dw_account(dw_client)
+    dw_account_links = generate_dw_account_links(dw_account)
+    dw_security      = generate_dw_security()
+    dw_trade_lot     = generate_dw_trade_lot(dw_account, dw_security)
+    dw_position      = generate_dw_position(dw_trade_lot, dw_security)
 
     print("Deriving gemstone source files...")
     topaz   = generate_topaz_positions(dw_position, dw_account, dw_security)
@@ -298,21 +347,30 @@ def run(output_dir: str, run_validate: bool) -> None:
     integrated = generate_integrated_positions(dw_trade_lot, dw_position, dw_account, dw_security)
 
     print("\nWriting CSVs:")
-    _write(dw_account,   os.path.join(output_dir, DW_ACCOUNT_FILE),            "dw_account.csv")
-    _write(dw_security,  os.path.join(output_dir, DW_SECURITY_FILE),           "dw_security.csv")
-    _write(dw_trade_lot, os.path.join(output_dir, DW_TRADE_LOT_FILE),          "dw_trade_lot.csv")
-    _write(dw_position,  os.path.join(output_dir, DW_POSITION_FILE),           "dw_position.csv")
-    _write(topaz,        os.path.join(output_dir, TOPAZ_FILE),                 "positions_topaz.csv")
-    _write(emerald,      os.path.join(output_dir, EMERALD_FILE),               "positions_emerald.csv")
-    _write(ruby,         os.path.join(output_dir, RUBY_FILE),                  "positions_ruby.csv")
-    _write(stub,         os.path.join(output_dir, SECURITY_MASTER_STUB_FILE),  "security_master_stub.csv")
-    _write(integrated,   os.path.join(output_dir, INTEGRATED_FILE),            "positions_integrated.csv")
+    _write(dw_client,        os.path.join(output_dir, DW_CLIENT_FILE),            "dw_client.csv")
+    _write(dw_account,       os.path.join(output_dir, DW_ACCOUNT_FILE),           "dw_account.csv")
+    _write(dw_account_links, os.path.join(output_dir, DW_ACCOUNT_LINKS_FILE),     "dw_account_links.csv")
+    _write(dw_security,      os.path.join(output_dir, DW_SECURITY_FILE),          "dw_security.csv")
+    _write(dw_trade_lot,     os.path.join(output_dir, DW_TRADE_LOT_FILE),         "dw_trade_lot.csv")
+    _write(dw_position,      os.path.join(output_dir, DW_POSITION_FILE),          "dw_position.csv")
+    _write(topaz,            os.path.join(output_dir, TOPAZ_FILE),                "positions_topaz.csv")
+    _write(emerald,          os.path.join(output_dir, EMERALD_FILE),              "positions_emerald.csv")
+    _write(ruby,             os.path.join(output_dir, RUBY_FILE),                 "positions_ruby.csv")
+    _write(stub,             os.path.join(output_dir, SECURITY_MASTER_STUB_FILE), "security_master_stub.csv")
+    _write(integrated,       os.path.join(output_dir, INTEGRATED_FILE),           "positions_integrated.csv")
 
-    total = sum(len(df) for df in [dw_account, dw_security, dw_trade_lot, dw_position, topaz, emerald, ruby, stub, integrated])
+    total = sum(len(df) for df in [
+        dw_client, dw_account, dw_account_links, dw_security, dw_trade_lot,
+        dw_position, topaz, emerald, ruby, stub, integrated,
+    ])
     print(f"\nTotal rows generated: {total:,}")
 
     if run_validate:
-        ok = validate(dw_account, dw_security, dw_trade_lot, dw_position, topaz, emerald, ruby, stub, integrated)
+        ok = validate(
+            dw_client, dw_account, dw_account_links,
+            dw_security, dw_trade_lot, dw_position,
+            topaz, emerald, ruby, stub, integrated,
+        )
         if not ok:
             sys.exit(1)
 

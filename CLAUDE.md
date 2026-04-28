@@ -30,7 +30,7 @@ all 200 securities, correct grain. Cortex gets 7/11 questions right. Here's why 
 
 | Directory | Phase | Purpose |
 |---|---|---|
-| `generator_v2/` | 1 | Deterministic seed data generator (9 CSVs, seed=42) |
+| `generator_v2/` | 1 | Deterministic seed data generator (11 CSVs, seed=42) |
 | `delivery/` | 2 | S3 delivery module — boto3 upload to landing zone |
 | `pipeline_naive/` | 3 | Bronze ingest (load_bronze.py — PUT/COPY only) |
 | `pipeline_semantic/` | 5 | YAML staging only (load_gold.py — dbt owns table population) |
@@ -131,3 +131,17 @@ See `docs/runbook.md` for key generation and registration steps.
 
 Epic 6 is a separate project consuming `variance/results/*.json`.
 Future orchestrator flag: `--with-analysis`.
+
+---
+
+## Cross-Project Integration
+
+**GSF_Account_Network** (`c:\Users\dlowe\Workspace\GSF_Account_Network`) is a companion demo
+that poses the identity ambiguity question this pipeline answers. It reads directly from
+`data/seed_v2/` CSVs. Key files it consumes:
+- `dw_account.csv` — account hub nodes (includes `client_id` and `strategy_type`)
+- `dw_client.csv` — client/household tier (25 clients)
+- `dw_account_links.csv` — OTC collateral relationships (Derivatives → Cash accounts)
+- `positions_topaz.csv`, `positions_emerald.csv` — MV discrepancy data for spoke tooltips
+
+Active branch: `feat/gsf-identity-network-phase2` — pending merge to main.
