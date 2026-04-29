@@ -6,7 +6,7 @@
 Phase 1          Phase 2          Phase 3          Phase 4          Phase 5           Phase 6          Phase 7
 GENERATION  -->  DELIVERY    -->  BRONZE      -->  SILVER      -->  GOLD         -->  AI QUERY    -->  ANALYSIS
 generator_v2     boto3 -> S3      COPY INTO        dbt run          dbt run           Cortex           Streamlit
-9 CSVs           landing zone     raw tables       naive union      DW tables         Analyst          variance
+11 CSVs          landing zone     raw tables       naive union      DW tables         Analyst          variance
                                                    (dbt Silver)     + semantic YAML   (4 tiers)        scorecard
 ```
 

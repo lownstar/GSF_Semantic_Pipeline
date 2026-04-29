@@ -9,11 +9,13 @@ Completed epics preserve task breakdowns and validation results; planned epics d
 
 **Status:** Complete
 **Generator:** `generator_v2/` (deterministic, seed=42)
-**Output:** 9 CSVs in `data/seed_v2/`
+**Output:** 11 CSVs in `data/seed_v2/`
 
 ### 1a. Normalized DW Schema (canonical target)
+- DW_CLIENT: client_id, client_name, client_type
+- DW_ACCOUNT: account_id, account_name, account_type, base_currency, custodian_account_num (Topaz), portfolio_code (Emerald), fund_code (Ruby), is_active, client_id, strategy_type
+- DW_ACCOUNT_LINKS: account_id, linked_account_id, link_type
 - DW_POSITION: position_id, account_id, security_id, lot_id, position_date, quantity, market_price, market_value, cost_basis, unrealized_gain_loss, currency, source_system
-- DW_ACCOUNT: account_id, account_name, account_type, base_currency, custodian_account_num (Topaz), portfolio_code (Emerald), fund_code (Ruby), is_active
 - DW_SECURITY: security_id, security_name, cusip, isin, ticker, asset_class, security_type, currency
 - DW_TRADE_LOT: lot_id, account_id, security_id, acquisition_date, acquisition_price, original_quantity, remaining_quantity, cost_basis
 
@@ -26,7 +28,7 @@ Completed epics preserve task breakdowns and validation results; planned epics d
 A1-A11 documented in `docs/ambiguity_registry_v2.md`
 
 ### 1d. Generator
-All 21 integrity checks pass (V1-V13 canonical + VI1-VI5 integrated + VS1-VS3 stub).
+All 26 integrity checks pass (V1-V13 canonical + VI1-VI5 integrated + VS1-VS3 stub + VC1-VC5 client/household tier).
 Key design: every source file is derivable from canonical DW with deterministic transformations.
 
 ---

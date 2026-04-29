@@ -154,11 +154,13 @@ Use these commands when re-running individual phases or debugging.
 python -m generator_v2.generator --validate
 ```
 
-Produces 9 deterministic CSVs in `data/seed_v2/`. All 21 integrity checks must pass.
+Produces 11 deterministic CSVs in `data/seed_v2/`. All 26 integrity checks must pass.
 
 | File | Rows | Description |
 |---|---|---|
-| `dw_account.csv` | 100 | Canonical accounts (all 3 source keys) |
+| `dw_client.csv` | 25 | Client/household master (25 clients, 4 accounts each) |
+| `dw_account.csv` | 100 | Canonical accounts (all 3 source keys + client_id + strategy_type) |
+| `dw_account_links.csv` | 20 | OTC collateral links (Derivatives → Cash accounts) |
 | `dw_security.csv` | 200 | Complete security master |
 | `dw_position.csv` | 4,886 | Canonical position-level grain |
 | `dw_trade_lot.csv` | 12,388 | Lot-level detail |
@@ -201,7 +203,7 @@ python pipeline_naive/load_bronze.py
 python pipeline_naive/load_bronze.py --source s3
 ```
 
-**Expected row counts:** TOPAZ=12,388 / EMERALD=4,886 / RUBY=4,886 / STUB=170
+**Expected row counts:** TOPAZ=4,886 / EMERALD=12,388 / RUBY=4,886 / STUB=170
 
 ---
 
