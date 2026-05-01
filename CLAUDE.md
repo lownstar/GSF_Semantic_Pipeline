@@ -106,12 +106,13 @@ streamlit run app/streamlit_app.py
 
 | Document | Contents |
 |---|---|
-| `docs/architecture.md` | Seven lifecycle phases, data flow, Snowflake objects |
+| `docs/architecture.md` | Seven lifecycle phases, data flow, row counts |
 | `docs/ambiguity_registry_v2.md` | All 11 ambiguities (A1-A11) — the design contract |
 | `docs/runbook.md` | Step-by-step pipeline execution + S3 + key-pair auth |
 | `docs/decisions.md` | Architectural and technical decision log |
-| `docs/epic_history.md` | Epic 1-5 completion history (PoC phase) |
+| `docs/epic_history.md` | Epic 1-5 completion history (PoC phase) + Epic 6/7 full design specs |
 | `docs/refactoring_changelog.md` | What was deleted, renamed, created — and why |
+| `docs/road_map.md` | Todos and ideas — unstarted work with dependencies |
 
 ---
 

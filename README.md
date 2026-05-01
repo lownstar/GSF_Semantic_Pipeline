@@ -227,6 +227,25 @@ See [docs/ambiguity_registry_v2.md](docs/ambiguity_registry_v2.md) for full deta
 
 ---
 
+## Row Counts
+
+| Table | Rows | Notes |
+|---|---|---|
+| BRONZE.TOPAZ_POSITIONS | 4,886 | Position-level (CUSIP, ACCT_NUM) |
+| BRONZE.EMERALD_POSITIONS | 12,388 | Lot-level (ticker, portfolioId, LOT_ID) |
+| BRONZE.RUBY_POSITIONS | 4,886 | Position-level (ISIN, fund_code) |
+| BRONZE.SECURITY_MASTER_STUB | 170 | 30 of 200 securities absent — produces A8/A10 NULLs |
+| SILVER.POSITIONS_INTEGRATED | 22,160 | Union of all 3 sources — A7-A11 embedded |
+| GOLD_NAIVE.ACCOUNTS_NAIVE | 100 | Canonical accounts (Ruby fund_code mapping) |
+| GOLD_NAIVE.SECURITIES_NAIVE | 200 | Full security master |
+| GOLD_NAIVE.POSITIONS_NAIVE | 4,886 | Ruby-only positions — correct grain, NAV price, NULL G/L |
+| GOLD.DW_ACCOUNT | 100 | Canonical accounts (all 3 source keys + client_id + strategy_type) |
+| GOLD.DW_SECURITY | 200 | Complete master — zero gaps, zero NULL asset_class |
+| GOLD.DW_POSITION | 4,886 | Position-level grain — zero NULL unrealized_gain_loss |
+| GOLD.DW_TRADE_LOT | 12,388 | Lot-level detail |
+
+---
+
 ## Related Projects
 
 **[GSF_Account_Network](https://github.com/lownstar/GSF_Account_Network)** — companion portfolio

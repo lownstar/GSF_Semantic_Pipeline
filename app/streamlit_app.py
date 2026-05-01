@@ -203,7 +203,7 @@ with st.sidebar:
 
     st.subheader("Tiers to display")
     show_bronze     = st.checkbox("Bronze (raw)",   value=False)
-    show_silver     = st.checkbox("Silver (naive)", value=True)
+    show_silver     = st.checkbox("Silver (naive)", value=False)
     show_gold_naive = st.checkbox("Naive Gold",     value=True)
     show_gold       = st.checkbox("Semantic Gold",  value=True)
 

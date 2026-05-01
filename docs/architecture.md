@@ -85,18 +85,7 @@ LEGACY SOURCE SYSTEMS (3 synthetic feeds, different schemas)
 
 ## Snowflake Objects
 
-| Object | Name | Status | Purpose |
-|---|---|---|---|
-| Database | `GSF_DEMO` | Active | Single database for entire demo |
-| Warehouse | `GSF_WH` | Active | Single compute resource |
-| Role | `GSF_ROLE` | Active | Demo role with object privileges |
-| Schema | `GSF_DEMO.BRONZE` | Active | Raw source tables (3 feeds + security stub) |
-| Schema | `GSF_DEMO.SILVER` | Active | Naive ETL output (POSITIONS_INTEGRATED) |
-| Schema | `GSF_DEMO.GOLD` | Active | Governed DW tables + semantic model |
-| Schema | `GSF_DEMO.GOLD_NAIVE` | Active | Ruby-authoritative Gold tables (POSITIONS_NAIVE, ACCOUNTS_NAIVE, SECURITIES_NAIVE) |
-| Stage | `@BRONZE.GSF_BRONZE_STAGE` | Active | Internal stage for local Bronze CSV loads |
-| Stage | `@BRONZE.GSF_S3_LANDING` | Active | External stage for S3 loads |
-| Stage | `@GOLD.GSF_GOLD_STAGE` | Active | Internal stage for Gold loads + semantic YAMLs |
+See [README.md](../README.md#snowflake-objects) for the full Snowflake object inventory.
 
 ---
 

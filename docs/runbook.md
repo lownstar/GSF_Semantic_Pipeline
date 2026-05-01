@@ -9,6 +9,8 @@ installed, Snowflake credentials in `.env` (copy from `.env.example`).
 
 ### Python Environment
 
+**Python ≤ 3.13 required.** dbt is incompatible with Python 3.14 (mashumaro dependency issue).
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
