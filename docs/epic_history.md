@@ -138,9 +138,13 @@ account relationship gap (Derivatives accounts → Ruby GL incomplete without co
 
 ---
 
-## Epic 7 (Planned): Interactive "Try It Yourself" Chat Tab
+## Epic 7 (Shelved): Interactive "Try It Yourself" Chat Tab
 
-**Status:** Planned
+**Status:** Shelved (2026-05-12) — branch `feat/epic7-chat-tab` preserved, not merged to main  
+**Reason:** Snowflake Cortex query costs are too high to sustain on a publicly accessible portfolio
+site. Implementation is complete and verified locally. If costs drop or the hosting model changes,
+the branch is ready to merge.
+
 **Motivation:** Portfolio visitors currently take the variance results on faith. This epic
 adds a multi-turn chat interface so they can ask their own natural language questions directly
 to Cortex Analyst across all four semantic tiers, see the generated SQL, and explore with

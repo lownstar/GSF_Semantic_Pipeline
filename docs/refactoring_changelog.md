@@ -2,6 +2,30 @@
 
 ---
 
+## Epic 7: Interactive Chat Tab — Built and Shelved (2026-05-12)
+
+### Why shelved
+
+Snowflake Cortex query costs are too high to sustain on a publicly accessible portfolio site.
+The implementation is complete and verified locally; the feature is preserved on branch
+`feat/epic7-chat-tab` and is not merged to main.
+
+### What was built (on branch only)
+
+- `app/cortex_chat.py` — credential loading (Streamlit Secrets / `.env`), multi-turn Cortex
+  Analyst API, SQL execution, graceful no-creds callout
+- `app/streamlit_app.py` — two-tab structure; Tab 2 "Try It Yourself" with tier selector,
+  suggested questions, `MAX_TURNS=10` soft throttle
+- `infrastructure/snowflake_setup.sql` — resource monitor (5 credits/month) + statement timeout
+- `requirements-app.txt` — `snowflake-connector-python>=3.0`, `cryptography>=41.0`
+- `docs/runbook.md` — "Enabling the Live Chat Tab" section
+
+### To revive
+
+Merge `feat/epic7-chat-tab` to main and add Snowflake Secrets to Streamlit Community Cloud.
+
+---
+
 ## GSF Identity Network — Phase 2: Client Tier & Account Links (2026-04-22)
 
 ### Why

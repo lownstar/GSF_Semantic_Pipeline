@@ -1,48 +1,36 @@
 # Roadmap
 
-Items are classified as **Todo** (design complete or well-scoped, ready to start) or **Idea** (worth exploring, no committed design yet).
+Items are classified as **Todo** (design complete or well-scoped, ready to start), **Shelved** (built or designed but not deployed), or **Idea** (worth exploring, no committed design yet).
 
 ---
 
-## Todos
+## Shelved
 
 ### Epic 7: Interactive "Try It Yourself" Chat Tab
 
-**Status:** Todo — design complete, not yet built  
+**Status:** Shelved (2026-05-12) — branch `feat/epic7-chat-tab` preserved, not merged to main  
+**Reason:** Snowflake Cortex query costs are too high to sustain on a publicly accessible portfolio
+site. The implementation is complete; if costs drop or the hosting model changes, the branch is
+ready to merge. All code is in `app/cortex_chat.py` and `app/streamlit_app.py` on that branch.
+
 **Motivation:** Portfolio visitors currently take the variance results on faith. A live multi-turn
 chat interface lets them ask their own natural language questions directly to Cortex Analyst,
 across all four tiers, see the generated SQL, and ask follow-ups. Proves the demo is real, not staged.
 
-**Deliverables:**
+**Deliverables (complete on branch):**
 
 | File | Change |
 |---|---|
 | `app/cortex_chat.py` | New — credential loading, Snowflake connection, multi-turn Cortex API call, SQL execution |
 | `app/streamlit_app.py` | Add second tab "Try It Yourself": tier selector, suggested questions, `st.chat_message` history, `st.chat_input` |
-| `requirements-app.txt` | Add `snowflake-connector-python>=3.0`, `cryptography>=41.0`, `python-dotenv>=1.0` |
+| `requirements-app.txt` | Add `snowflake-connector-python>=3.0`, `cryptography>=41.0` |
 | `docs/runbook.md` | New section: "Enabling the Live Chat Tab" with Streamlit Secrets `.toml` template |
 
-**Key design decisions:**
-- Multi-turn: full `messages` history sent on every Cortex Analyst API call; prior text + SQL echoed back so Cortex resolves follow-up pronouns
-- Credential loading: deployed → `st.secrets["SNOWFLAKE_PRIVATE_KEY_PEM"]`; local → `SNOWFLAKE_PRIVATE_KEY_FILE` (.p8 DER)
-- Graceful degradation: when no credentials are found, tab shows a setup callout instead of an error
-- Tier switch requires a new conversation (session state reset) to avoid context pollution across semantic models
-
-**Dependencies:**
-- `cortex/query_cortex.py` — reuse `execute_sql()`, `_ensure_staged()`, `MODELS` dict, REST endpoint pattern
-- `variance/questions.py` — reuse `QUESTIONS` list to power suggested-question prompts
-- Snowflake key-pair credentials (already set up; must be added to Streamlit Community Cloud Secrets for deployed mode)
-
-**Verification:**
-1. Local with `.env` → chat tab live, multi-turn works, SQL + results render
-2. Local without `.env` → tab shows no-credentials callout, no errors
-3. Deployed → after adding Streamlit Secrets, chat tab goes live with no code changes
-4. Multi-turn → ask Q01, then ask a follow-up scoped to the same account → Cortex uses context
-5. Tier comparison → same question on `gold_naive` vs `gold` shows wrong vs correct answer in real-time
-6. Suggested questions → clicking pre-fills and submits in one action
-7. Tab 1 (Variance Analysis) → unaffected by the tab restructure
+**To revive:** merge `feat/epic7-chat-tab` to main and add Snowflake Secrets to Streamlit Community Cloud.
 
 ---
+
+## Todos
 
 ### Epic 6: AI Results Analysis Tool
 
@@ -92,5 +80,5 @@ accessible to non-technical hiring managers who won't clone the repo.
 polished GitHub README section linking the video.
 
 **Dependencies:**
-- Epic 7 (chat tab) would make a more compelling recording — may want to wait until that is built.
-- Deployed Streamlit app is live now; recording can proceed independently if Epic 7 is not prioritized.
+- Deployed Streamlit app is live now; recording can proceed at any time.
+- Epic 7 (chat tab) is shelved — recording proceeds without it.
