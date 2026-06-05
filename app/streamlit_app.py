@@ -344,9 +344,10 @@ def _render_question(q, visible_models):
     expander_label = f"**{qid}** [{codes}]  {question_short}   —   {status_line}"
 
     with st.expander(expander_label):
+        desc = q['ground_truth_description'].replace('$', r'\$').replace('_', r'\_')
         st.markdown(
             f"**Ground truth:** {_fmt_gt(gt, result_type)}  "
-            f"·  *{q['ground_truth_description']}*"
+            f"·  *{desc}*"
         )
         st.divider()
 

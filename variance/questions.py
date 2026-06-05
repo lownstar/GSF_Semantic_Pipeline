@@ -256,7 +256,7 @@ QUESTIONS: list[Question] = [
                 "of three source systems, with no warning or indicator of the gap."
             ),
         },
-        ground_truth_description="Sum of unrealized_gain_loss for all positions where value < -$10,000",
+        ground_truth_description="Sum of unrealized gain/loss for all positions with market value below -10,000",
         result_type="scalar",
         ground_truth_fn=_q04_gt,
     ),
@@ -320,7 +320,7 @@ QUESTIONS: list[Question] = [
                 "model does not declare which it used."
             ),
         },
-        ground_truth_description="Count of positions in DW_POSITION with position_date = 2024-12-31 (trade-date basis)",
+        ground_truth_description="Count of positions in DW_POSITION with position date = 2024-12-31 (trade-date basis)",
         result_type="scalar",
         ground_truth_fn=_q06_gt,
     ),
@@ -378,7 +378,7 @@ QUESTIONS: list[Question] = [
                 "entirely due to NULL unrealized_gl."
             ),
         },
-        ground_truth_description="Sum of unrealized_gain_loss for Equity positions (specific identification cost basis)",
+        ground_truth_description="Sum of unrealized gain/loss for Equity positions (specific identification cost basis)",
         result_type="scalar",
         ground_truth_fn=_q08_gt,
     ),
@@ -437,7 +437,7 @@ QUESTIONS: list[Question] = [
                 "Ruby fund accounting system's contribution is permanently excluded from this query."
             ),
         },
-        ground_truth_description="Count of positions in DW_POSITION with unrealized_gain_loss < -$10,000",
+        ground_truth_description="Count of positions in DW_POSITION with unrealized gain/loss below -10,000",
         result_type="scalar",
         ground_truth_fn=_q10_gt,
     ),
@@ -470,7 +470,7 @@ QUESTIONS: list[Question] = [
                 "accounting methods in a single SUM."
             ),
         },
-        ground_truth_description="Sum of cost_basis for Fixed Income positions (specific identification, DW grain)",
+        ground_truth_description="Sum of cost basis for Fixed Income positions (specific identification, DW grain)",
         result_type="scalar",
         ground_truth_fn=_q11_gt,
     ),

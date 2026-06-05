@@ -213,7 +213,7 @@
         "silver": "POSITIONS_INTEGRATED.unrealized_gl is NULL for all Ruby-sourced rows (22% of the table). Any filter on unrealized_gl silently excludes those positions. Additionally, three different column names map to 'unrealized gain/loss' across the source schemas \u2014 Cortex may not recognize the concept in all three.",
         "gold_naive": "POSITIONS_NAIVE.total_unrealized_gl is computed as SUM(unrealized_gl). Ruby rows (22% of all positions) have NULL unrealized_gl, which SUM() silently excludes. Any filter on unrealized_gl < -10000 is structurally limited to two of three source systems, with no warning or indicator of the gap."
       },
-      "ground_truth_description": "Sum of unrealized_gain_loss for all positions where value < -$10,000",
+      "ground_truth_description": "Sum of unrealized gain/loss for all positions with market value below -10,000",
       "result_type": "scalar",
       "ground_truth": -1713597904.2900002,
       "bronze": {
@@ -334,7 +334,7 @@
         "silver": "Topaz uses AS_OF_DT (settlement date), Emerald uses positionDate (trade date), and Ruby uses nav_date (NAV strike date). At year-end these dates can fall on different calendar days. The ETL silently chose one convention \u2014 the column looks normalized but the semantic distinction between date types is lost.",
         "gold_naive": "POSITIONS_NAIVE maps all three date conventions to a single position_date column. The date alignment logic embeds one convention as authoritative, but the COUNT at year-end will include or exclude edge-case positions depending on whether settlement date, trade date, or NAV date was selected as canonical \u2014 and the model does not declare which it used."
       },
-      "ground_truth_description": "Count of positions in DW_POSITION with position_date = 2024-12-31 (trade-date basis)",
+      "ground_truth_description": "Count of positions in DW_POSITION with position date = 2024-12-31 (trade-date basis)",
       "result_type": "scalar",
       "ground_truth": 4886.0,
       "bronze": {
@@ -460,7 +460,7 @@
         "silver": "POSITIONS_INTEGRATED.cost_basis blends three incompatible accounting methods: Emerald specific lot identification, Topaz custodian cost, and Ruby book cost. The computed unrealized gain is internally consistent but cannot be reconciled to any system of record and would fail an audit.",
         "gold_naive": "POSITIONS_NAIVE.total_unrealized_gl aggregates G/L from three sources using incompatible cost basis methods: Emerald (specific lot), Topaz (custodian cost), Ruby (book cost). The sum is a single precise number, but it mixes three accounting standards. Additionally, Ruby rows (22% of positions) are excluded entirely due to NULL unrealized_gl."
       },
-      "ground_truth_description": "Sum of unrealized_gain_loss for Equity positions (specific identification cost basis)",
+      "ground_truth_description": "Sum of unrealized gain/loss for Equity positions (specific identification cost basis)",
       "result_type": "scalar",
       "ground_truth": 36547881.58,
       "bronze": {
@@ -580,7 +580,7 @@
         "silver": "Ruby is a fund accounting system \u2014 it does not publish unrealized gain/loss. All 4,886 Ruby-sourced rows in POSITIONS_INTEGRATED have unrealized_gl = NULL. A filter WHERE unrealized_gl < -10000 silently excludes 22% of the portfolio. The result looks complete but covers only two of three source systems.",
         "gold_naive": "POSITIONS_NAIVE filters out Ruby rows (22% of all positions) because SUM(unrealized_gl) evaluates to NULL for them. A count of positions with unrealized loss < -$10,000 is structurally limited to Topaz + Emerald \u2014 the Ruby fund accounting system's contribution is permanently excluded from this query."
       },
-      "ground_truth_description": "Count of positions in DW_POSITION with unrealized_gain_loss < -$10,000",
+      "ground_truth_description": "Count of positions in DW_POSITION with unrealized gain/loss below -10,000",
       "result_type": "scalar",
       "ground_truth": 2365.0,
       "bronze": {
@@ -642,7 +642,7 @@
         "silver": "Compounds three ambiguities: (A1) security identifiers are fragmented across CUSIP/ticker/ISIN with no shared key; (A4) account identifiers use source keys not canonical account_id; (A9) cost_basis blends lot identification, custodian cost, and book cost methods. The Silver answer is both incomplete and methodologically unsound.",
         "gold_naive": "Three ambiguities compound in POSITIONS_NAIVE: (A1) security joins require security_master_id, silently dropping 15% of positions (including some Fixed Income names); (A4) account_ref is a raw source key, making account-scoped cost basis queries unreachable; (A9) total_cost_basis mixes specific lot cost (Emerald), custodian cost (Topaz), and book cost (Ruby) \u2014 three incompatible accounting methods in a single SUM."
       },
-      "ground_truth_description": "Sum of cost_basis for Fixed Income positions (specific identification, DW grain)",
+      "ground_truth_description": "Sum of cost basis for Fixed Income positions (specific identification, DW grain)",
       "result_type": "scalar",
       "ground_truth": 932065151.31,
       "bronze": {
